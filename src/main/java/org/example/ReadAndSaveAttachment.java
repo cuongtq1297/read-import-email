@@ -84,11 +84,11 @@ public class ReadAndSaveAttachment {
             System.out.println("Có " + messages.length + " thư từ trong INBOX");
             for (int i = 0; i < messages.length; i++) {
                 Message message = messages[i];
-                System.out.println("---------------------------------");
-                System.out.println("Số thứ tự: " + (i + 1));
-                System.out.println("Tiêu đề: " + message.getSubject());
-                System.out.println("Người gửi: " + message.getFrom()[0]);
-                System.out.println("Nội dung: " + message.getContent().toString());
+//                System.out.println("---------------------------------");
+//                System.out.println("Số thứ tự: " + (i + 1));
+//                System.out.println("Tiêu đề: " + message.getSubject());
+//                System.out.println("Người gửi: " + message.getFrom()[0]);
+//                System.out.println("Nội dung: " + message.getContent().toString());
 
                 // kiểm tra các phần của email có multipart hay là text
                 if (message.getContent() instanceof Multipart) {
@@ -141,7 +141,8 @@ public class ReadAndSaveAttachment {
                                     output.write(buffer, 0, n);
                                 }
                                 System.out.println("noi dung file xls");
-//                                System.out.println(output);
+                                xlsContent = output.toString();
+                                ImportEmailMissingConfig.importData(xlsContent);
                             }
                         }
                     }
