@@ -12,14 +12,18 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ImportEmailHur {
-    public static void importData(String data) {
+    public static void importData(String data) throws SQLException {
         BufferedReader reader = new BufferedReader(new StringReader(data));
         String line;
         Connection connection = null;
         PreparedStatement ps = null;
+        PreparedStatement ps1 = null;
+        ResultSet rs = null;
         try {
             connection = getConnection.connect();
             connection.setAutoCommit(false);
+            String sqlCheck = "select * from email.hur where sequence_no = ?";
+            ps1 = connection.prepareStatement(sqlCheck);
             String importSql = "INSERT INTO email.hur" +
                     "(sender, recipient, sequence_no, threshold, date_time_of_analysis, date_time_of_report_creation, BEGINNING_OF_THE_OBSERVATION_PERIOD, END_OF_THE_OBSERVATION_PERIOD,create_at)\n" +
                     "VALUES(?, ?, ?, ?, ?, ?, ?, ?,NOW())";
@@ -27,6 +31,7 @@ public class ImportEmailHur {
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("H")) {
                     List<String> fields = Arrays.asList(line.split(","));
+                    ps1.setString(1,fields.get(3));
                     ps.setString(1, fields.get(1));
                     ps.setString(2, fields.get(2));
                     ps.setString(3, fields.get(3));
@@ -40,12 +45,17 @@ public class ImportEmailHur {
                     ps.setString(8, fields.get(2));
                 }
             }
-            ps.executeUpdate();
-            connection.commit();
-            connection.close();
-            ps.close();
+            rs = ps1.executeQuery();
+            if(!rs.next()){
+                ps.executeUpdate();
+                connection.commit();
+            }
+
         } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            connection.close();
+            ps.close();
         }
     }
 }
