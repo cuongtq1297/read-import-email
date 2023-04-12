@@ -17,7 +17,7 @@ import javax.mail.Store;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
-public class ReadAndSaveAttachment {
+public class EmailProcess {
     private static String USER_NAME;
     private static String PASSWORD;
     private static String HOST;
@@ -100,7 +100,8 @@ public class ReadAndSaveAttachment {
                         if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase("attachment")) {
                             // kiểm tra định dạng file
                             String fileName = bodyPart.getFileName();
-                            if (fileName.endsWith(".csv")) {
+                            // email canh bao hur
+                            if (fileName.contains("HUR") && fileName.endsWith(".csv")) {
                                 BASE64DecoderStream base64DecoderStream = null;
                                 try {
                                     base64DecoderStream = (BASE64DecoderStream) ((MimeBodyPart) bodyPart).getContent();
@@ -115,7 +116,6 @@ public class ReadAndSaveAttachment {
                                     DataHandler handler = bodyPart.getDataHandler();
                                     content = handler.getContent().toString();
                                 }
-                                System.out.println("File đính kèm: " + fileName);
                                 ImportEmailHur.importData(content);
                             }
                             if (fileName.endsWith(".txt")) {
@@ -130,8 +130,21 @@ public class ReadAndSaveAttachment {
                                 }
                                 attachmentContent = stringBuilder.toString();
 //                                System.out.println("noi dung file txt: " + attachmentContent);
+                                // email canh bao missing tap file
+                                if(attachmentContent.contains("TAP IN pending")){
+                                    //
+                                }
+                                // email canh bao rap file
+                                if(attachmentContent.contains("RAP IN")){
+                                    ImportEmailRapFile.importData(attachmentContent);
+                                }
+                                // email canh bao dfdr
+                                if(attachmentContent.contains("DAILY FILE DELIVERY REPORT")){
+                                    ImportEmailDfd.importData(attachmentContent);
+                                }
                             }
-                            if (fileName.endsWith(".xls")) {
+                            // email canh bao missing config
+                            if (fileName.endsWith(".xls")&& fileName.contains("missing_configuration_list")) {
                                 String xlsContent = "";
                                 InputStream is = bodyPart.getInputStream();
                                 ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -140,9 +153,8 @@ public class ReadAndSaveAttachment {
                                 while ((n = is.read(buffer)) != -1) {
                                     output.write(buffer, 0, n);
                                 }
-                                System.out.println("noi dung file xls");
                                 xlsContent = output.toString();
-                                ImportEmailMissingConfig.importData(xlsContent);
+//                                ImportEmailMissingConfig.importData(xlsContent);
                             }
                         }
                     }

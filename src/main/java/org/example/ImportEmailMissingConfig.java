@@ -18,12 +18,12 @@ public class ImportEmailMissingConfig {
             connection.setAutoCommit(false);
             BufferedReader reader = new BufferedReader(new StringReader(data.trim()));
             String line;
+            String importSql = "insert into email.missing_config (tap_name,record,sdr_amount,create_at)" +
+                    " values(?,?,?,now())" ;
+            ps = connection.prepareStatement(importSql);
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\\s+");
                 if(!parts[0].equals("Tapname")){
-                    String importSql = "insert into email.missing_config (tap_name,record,sdr_amount,create_date)" +
-                            " values(?,?,?,now())" ;
-                    ps = connection.prepareStatement(importSql);
                     ps.setString(1,parts[0]);
                     ps.setString(2,parts[1]);
                     ps.setString(3,parts[2]);
@@ -32,7 +32,6 @@ public class ImportEmailMissingConfig {
             }
             connection.commit();
             connection.close();
-
             reader.close();
 
         } catch (SQLException | IOException e) {
