@@ -1,7 +1,8 @@
-package org.example;
+package org.example.import_data;
+
+import org.example.database.getConnection;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;

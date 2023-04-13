@@ -1,6 +1,10 @@
-package org.example;
+package org.example.process;
 
 import com.sun.mail.util.BASE64DecoderStream;
+import org.example.import_data.ImportEmailDfd;
+import org.example.import_data.ImportEmailHur;
+import org.example.import_data.ImportEmailMissingConfig;
+import org.example.import_data.ImportEmailRapFile;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -22,18 +26,19 @@ public class EmailProcess {
     private static String PASSWORD;
     private static String HOST;
     private static String PORT;
-    public static final String CONFIG_FILE_PATH =  "config/email-infor.cfg";
+    public static final String CONFIG_FILE_PATH = "config/email-infor.cfg";
+
     static {
         Properties properties = new Properties();
         FileInputStream propsFile = null;
-        try{
+        try {
             propsFile = new FileInputStream(CONFIG_FILE_PATH);
             properties.load(propsFile);
             USER_NAME = properties.getProperty("USERNAME");
             PASSWORD = properties.getProperty("PASSWORD");
             HOST = properties.getProperty("HOST");
             PORT = properties.getProperty("PORT");
-        } catch (Exception e){
+        } catch (Exception e) {
             e.getMessage();
         }
     }
@@ -48,24 +53,13 @@ public class EmailProcess {
         return sb.toString();
     }
 
-    public static void saveBASE64DecoderStreamContentToFile(BASE64DecoderStream base64DecoderStream, String fileName) throws IOException {
-        byte[] buffer = new byte[1024];
-        FileOutputStream fos = new FileOutputStream(new File(fileName));
-        int len;
-        while ((len = base64DecoderStream.read(buffer)) != -1) {
-            fos.write(buffer, 0, len);
-        }
-        fos.close();
-    }
-    public static void EmailProcess(Boolean validToRun){
-        if (validToRun){
+    public static void EmailProcess(Boolean validToRun) {
+        if (validToRun) {
             Properties props = new Properties();
             props.put("mail.smtp.auth", "true");
             props.put("mail.smtp.starttls.enable", "true");
             props.put("mail.smtp.host", HOST);
             props.put("mail.smtp.port", PORT);
-
-            // Tạo một đối tượng Session để tương tác với mail server
             Session session = Session.getInstance(props,
                     new javax.mail.Authenticator() {
                         protected PasswordAuthentication getPasswordAuthentication() {
@@ -73,7 +67,6 @@ public class EmailProcess {
                         }
                     });
             try {
-                // Kết nối tới Store và hiển thị các Message trong Inbox
                 Store store = session.getStore("imaps");
                 store.connect("imap.gmail.com", USER_NAME, PASSWORD);
                 Folder folder = store.getFolder("INBOX");
@@ -128,20 +121,20 @@ public class EmailProcess {
                                     }
                                     attachmentContent = stringBuilder.toString();
                                     // email canh bao missing tap file
-                                    if(attachmentContent.contains("TAP IN pending")){
+                                    if (attachmentContent.contains("TAP IN pending")) {
 
                                     }
                                     // email canh bao rap file
-                                    if(attachmentContent.contains("RAP IN")){
+                                    if (attachmentContent.contains("RAP IN")) {
                                         ImportEmailRapFile.importData(attachmentContent);
                                     }
                                     // email canh bao dfdr
-                                    if(attachmentContent.contains("DAILY FILE DELIVERY REPORT")){
+                                    if (attachmentContent.contains("DAILY FILE DELIVERY REPORT")) {
                                         ImportEmailDfd.importData(attachmentContent);
                                     }
                                 }
                                 // email canh bao missing config
-                                if (fileName.endsWith(".xls")&& fileName.contains("missing_configuration_list")) {
+                                if (fileName.endsWith(".xls") && fileName.contains("missing_configuration_list")) {
                                     String xlsContent = "";
                                     InputStream is = bodyPart.getInputStream();
                                     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -151,7 +144,7 @@ public class EmailProcess {
                                         output.write(buffer, 0, n);
                                     }
                                     xlsContent = output.toString();
-//                                ImportEmailMissingConfig.importData(xlsContent);
+                                    ImportEmailMissingConfig.importData(xlsContent);
                                 }
                             }
                         }
@@ -163,9 +156,5 @@ public class EmailProcess {
                 e.printStackTrace();
             }
         }
-    }
-    public static void main(String[] args) throws SQLException {
-        Boolean invalidToRun = CheckValidToRun.checkValidToRun();
-        EmailProcess(invalidToRun);
     }
 }
