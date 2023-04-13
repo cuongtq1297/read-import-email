@@ -2,7 +2,6 @@ package org.example.database;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.process.Process;
 
 import java.io.FileInputStream;
 import java.sql.Connection;

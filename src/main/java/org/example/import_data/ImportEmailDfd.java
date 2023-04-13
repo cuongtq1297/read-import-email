@@ -3,7 +3,6 @@ package org.example.import_data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.database.getConnection;
-import org.example.process.Process;
 
 import java.io.BufferedReader;
 import java.io.IOException;
