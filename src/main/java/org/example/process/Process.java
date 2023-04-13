@@ -12,9 +12,11 @@ public class Process {
     private static final Logger logger = LogManager.getLogger(Process.class);
     static class MyTask extends TimerTask {
         public void run() {
+            System.out.println("start");
             logger.info("email process start");
             EmailProcess.EmailProcess();
             logger.info("email process is done");
+            System.out.println("done");
         }
     }
     public static void main(String[] args) throws SQLException {

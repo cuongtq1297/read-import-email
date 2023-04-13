@@ -12,7 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class ImportEmailMissingConfig {
-    private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
+    private static final Logger logger = LogManager.getLogger(ImportEmailMissingConfig.class);
     public static void importData(String data) throws SQLException {
         Connection connection = null;
         PreparedStatement ps = null;

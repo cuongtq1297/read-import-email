@@ -94,6 +94,7 @@ public class EmailProcess {
             store.connect("imap.gmail.com", USER_NAME, PASSWORD);
             Folder folder = store.getFolder("INBOX");
             folder.open(Folder.READ_ONLY);
+            Folder targetFolder = store.getFolder("PROCESS_SUCCESS");
             Message[] messages = folder.getMessages();
             System.out.println("Có " + messages.length + " thư từ trong INBOX");
             for (int i = 0; i < messages.length; i++) {
@@ -135,6 +136,7 @@ public class EmailProcess {
                                 checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
                                 if (checkEmail) {
                                     ImportEmailHur.importData(content);
+                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
                             // email canh bao tap missing
@@ -152,6 +154,7 @@ public class EmailProcess {
                                 checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
                                 if (checkEmail) {
                                     ImportEmailTap.importData(attachmentContent);
+                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
                             // email canh bao rap file
@@ -169,6 +172,7 @@ public class EmailProcess {
                                 checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
                                 if (checkEmail) {
                                     ImportEmailRapFile.importData(attachmentContent);
+                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
                             // email canh bao dfd
@@ -186,6 +190,7 @@ public class EmailProcess {
                                 checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
                                 if (checkEmail) {
                                     ImportEmailDfd.importData(attachmentContent);
+                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
 
@@ -203,6 +208,7 @@ public class EmailProcess {
                                 checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
                                 if (checkEmail) {
                                     ImportEmailMissingConfig.importData(xlsContent);
+                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
                         }
