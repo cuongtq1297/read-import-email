@@ -1,6 +1,9 @@
 package org.example.import_data;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.example.database.getConnection;
+import org.example.process.Process;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,7 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class ImportEmailDfd {
-    public static void importData(String data) {
+    private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
+    public static void importData(String data) throws SQLException {
         BufferedReader reader = new BufferedReader(new StringReader(data));
         boolean isReading = false;
         String line;
@@ -18,7 +22,7 @@ public class ImportEmailDfd {
         Connection connection = null;
         PreparedStatement ps = null;
         StringBuilder sb = new StringBuilder();
-        String importSql = "INSERT INTO email.dfd" +
+        String importSql = "INSERT INTO email.dfd_email_attachment_data" +
                 "(hpmn,seqnr,cut_off_time,first_call_time,no_records,tax,charge,cur,received_time,validated_time,cnv,sent_time,rj,qr,sn,create_at)" +
                 "values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,NOW())";
         try {
@@ -72,10 +76,12 @@ public class ImportEmailDfd {
             }
 
             connection.commit();
-            connection.close();
             reader.close();
         } catch (SQLException | IOException e) {
-            throw new RuntimeException(e);
+            logger.error("import data fail" + e);
+        } finally {
+            connection.close();
+            ps.close();
         }
     }
 }

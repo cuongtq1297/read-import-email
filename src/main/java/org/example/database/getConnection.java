@@ -1,5 +1,9 @@
 package org.example.database;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.example.process.Process;
+
 import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,6 +11,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 public class getConnection {
+    private static final Logger logger = LogManager.getLogger(getConnection.class);
     private static String URL;
     private static String USER;
     private static String PASSWORD;
@@ -21,17 +26,15 @@ public class getConnection {
             USER = properties.getProperty("USER");
             PASSWORD = properties.getProperty("PASSWORD");
         } catch (Exception e){
-            e.getMessage();
+            logger.error("get database information fail" + e);
         }
     }
     public static Connection connect() throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            System.out.println("Connected to Database.");
         } catch (SQLException e) {
-            System.out.println("Cannot connect to Database.");
-            e.printStackTrace();
+            logger.error("connect database fail" + e);
         }
         return connection;
     }

@@ -1,5 +1,7 @@
 package org.example.import_data;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.example.database.getConnection;
 
 import java.io.BufferedReader;
@@ -11,16 +13,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class ImportEmailMissingConfig {
-    public static void importData(String data) {
+    private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
+    public static void importData(String data) throws SQLException {
         Connection connection = null;
         PreparedStatement ps = null;
-        ResultSet rs = null;
         try {
             connection = getConnection.connect();
             connection.setAutoCommit(false);
             BufferedReader reader = new BufferedReader(new StringReader(data.trim()));
             String line;
-            String importSql = "insert into email.missing_config (tap_name,record,sdr_amount,create_at)" +
+            String importSql = "insert into email.mcl_email_attachment_data (tap_name,record,sdr_amount,create_at)" +
                     " values(?,?,?,now())" ;
             ps = connection.prepareStatement(importSql);
             while ((line = reader.readLine()) != null) {
@@ -33,11 +35,13 @@ public class ImportEmailMissingConfig {
                 }
             }
             connection.commit();
-            connection.close();
             reader.close();
 
         } catch (SQLException | IOException e) {
-            throw new RuntimeException(e);
+            logger.error("import data fail" + e);
+        } finally {
+            connection.close();
+            ps.close();
         }
     }
 }
