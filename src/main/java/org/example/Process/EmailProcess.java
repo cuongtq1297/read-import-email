@@ -100,6 +100,7 @@ public class EmailProcess {
             System.out.println("Có " + messages.length + " thư từ trong INBOX");
             for (int i = 0; i < messages.length; i++) {
                 boolean checkEmail = false;
+                boolean resultImport = false;
                 Message message = messages[i];
 
                 // xử lý string sender mail
@@ -136,8 +137,8 @@ public class EmailProcess {
                                 }
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
                                 if (checkEmail) {
-                                    ImportEmailHur.importData(content);
-                                    InsertEmail.insertEmail(ImportEmailHur.importData(content), senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
+                                    resultImport = ImportEmailHur.importData(content);
+                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
@@ -173,8 +174,8 @@ public class EmailProcess {
                                 attachmentContent = stringBuilder.toString();
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
                                 if (checkEmail) {
-                                    ImportEmailRapFile.importData(attachmentContent);
-                                    InsertEmail.insertEmail(ImportEmailRapFile.importData(attachmentContent), senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
+                                    resultImport = ImportEmailRapFile.importData(attachmentContent);
+                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
@@ -192,8 +193,8 @@ public class EmailProcess {
                                 attachmentContent = stringBuilder.toString();
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
                                 if (checkEmail) {
-                                    ImportEmailDfd.importData(attachmentContent);
-                                    InsertEmail.insertEmail(ImportEmailDfd.importData(attachmentContent), senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
+                                    resultImport = ImportEmailDfd.importData(attachmentContent);
+                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
