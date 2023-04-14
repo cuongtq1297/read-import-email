@@ -1,8 +1,8 @@
-package org.example.import_data;
+package org.example.Import_data;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.database.getConnection;
+import org.example.Database.GetConnection;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,13 +15,15 @@ import java.util.List;
 
 public class ImportEmailHur {
     private static final Logger logger = LogManager.getLogger(ImportEmailHur.class);
-    public static void importData(String data) throws SQLException {
+    public static boolean importData(String data) throws SQLException {
+        boolean result = false;
+        int resultInsert = 0;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         String line;
         Connection connection = null;
         PreparedStatement ps = null;
         try {
-            connection = getConnection.connect();
+            connection = GetConnection.connect();
             connection.setAutoCommit(false);
             String importSql = "INSERT INTO email.hur_email_attachment_data" +
                     "(sender, recipient, sequence_no, threshold, date_time_of_analysis, date_time_of_report_creation, BEGINNING_OF_THE_OBSERVATION_PERIOD, END_OF_THE_OBSERVATION_PERIOD,create_at)\n" +
@@ -43,7 +45,10 @@ public class ImportEmailHur {
                     ps.setString(8, fields.get(2));
                 }
             }
-            ps.executeUpdate();
+            resultInsert =  ps.executeUpdate();
+            if(resultInsert == 1){
+                result = true;
+            }
             connection.commit();
 
         } catch (SQLException | IOException e) {
@@ -52,5 +57,6 @@ public class ImportEmailHur {
             connection.close();
             ps.close();
         }
+        return result;
     }
 }

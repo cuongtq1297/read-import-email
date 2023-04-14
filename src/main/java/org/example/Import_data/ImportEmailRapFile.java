@@ -1,8 +1,8 @@
-package org.example.import_data;
+package org.example.Import_data;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.database.getConnection;
+import org.example.Database.GetConnection;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +14,9 @@ import java.util.Arrays;
 
 public class ImportEmailRapFile {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
-    public static void importData(String data) throws SQLException {
+    public static boolean importData(String data) throws SQLException {
+        boolean result = false;
+        int resultInsert = 0;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         boolean isReading = false;
         String line;
@@ -25,7 +27,7 @@ public class ImportEmailRapFile {
                 "(rap_file,tap_file,date_received,tap_charge,record_type,error_charge,error_code,error_description,create_at)" +
                 "values(?, ?, ?, ?, ?, ?, ?, ?,NOW())";
         try {
-            connection = getConnection.connect();
+            connection = GetConnection.connect();
             connection.setAutoCommit(false);
             ps = connection.prepareStatement(importSql);
             while ((line = reader.readLine()) != null){
@@ -55,7 +57,10 @@ public class ImportEmailRapFile {
             ps.setString(7,errorCode);
             ps.setString(8,errorDescription);
 
-            ps.executeUpdate();
+            resultInsert =  ps.executeUpdate();
+            if(resultInsert == 1){
+                result = true;
+            }
             connection.commit();
             reader.close();
         } catch (SQLException | IOException e) {
@@ -64,5 +69,6 @@ public class ImportEmailRapFile {
             connection.close();
             ps.close();
         }
+        return result;
     }
 }

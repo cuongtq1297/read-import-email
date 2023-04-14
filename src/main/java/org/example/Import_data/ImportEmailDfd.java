@@ -1,8 +1,8 @@
-package org.example.import_data;
+package org.example.Import_data;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.database.getConnection;
+import org.example.Database.GetConnection;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,7 +13,9 @@ import java.sql.SQLException;
 
 public class ImportEmailDfd {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
-    public static void importData(String data) throws SQLException {
+    public static boolean importData(String data) throws SQLException {
+        boolean result = false;
+        int resultInsert = 0;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         boolean isReading = false;
         String line;
@@ -25,7 +27,7 @@ public class ImportEmailDfd {
                 "(hpmn,seqnr,cut_off_time,first_call_time,no_records,tax,charge,cur,received_time,validated_time,cnv,sent_time,rj,qr,sn,create_at)" +
                 "values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,NOW())";
         try {
-            connection = getConnection.connect();
+            connection = GetConnection.connect();
             connection.setAutoCommit(false);
             ps = connection.prepareStatement(importSql);
             while ((line = reader.readLine()) != null) {
@@ -71,7 +73,10 @@ public class ImportEmailDfd {
                 ps.setString(13, rj);
                 ps.setString(14, qr);
                 ps.setString(15, sn);
-                ps.executeUpdate();
+                resultInsert =  ps.executeUpdate();
+                if(resultInsert == 1){
+                    result = true;
+                }
             }
 
             connection.commit();
@@ -82,5 +87,6 @@ public class ImportEmailDfd {
             connection.close();
             ps.close();
         }
+        return result;
     }
 }

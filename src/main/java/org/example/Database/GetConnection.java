@@ -1,4 +1,4 @@
-package org.example.database;
+package org.example.Database;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,8 +9,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class getConnection {
-    private static final Logger logger = LogManager.getLogger(getConnection.class);
+public class GetConnection {
+    private static final Logger logger = LogManager.getLogger(GetConnection.class);
     private static String URL;
     private static String USER;
     private static String PASSWORD;

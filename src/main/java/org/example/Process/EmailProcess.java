@@ -1,10 +1,11 @@
-package org.example.process;
+package org.example.Process;
 
 import com.sun.mail.util.BASE64DecoderStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.import_data.*;
-import org.example.insert_email_infor.InsertEmailInfor;
+import org.example.Import_data.*;
+import org.example.Insert_email_infor.CheckEmail;
+import org.example.Insert_email_infor.InsertEmail;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -133,9 +134,10 @@ public class EmailProcess {
                                     DataHandler handler = bodyPart.getDataHandler();
                                     content = handler.getContent().toString();
                                 }
-                                checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
+                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
                                 if (checkEmail) {
                                     ImportEmailHur.importData(content);
+                                    InsertEmail.insertEmail(ImportEmailHur.importData(content), senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
@@ -151,7 +153,7 @@ public class EmailProcess {
                                     stringBuilder.append(new String(buffer, 0, bufferSize));
                                 }
                                 attachmentContent = stringBuilder.toString();
-                                checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
+                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
                                 if (checkEmail) {
                                     ImportEmailTap.importData(attachmentContent);
                                     targetFolder.appendMessages(new Message[]{message});
@@ -169,9 +171,10 @@ public class EmailProcess {
                                     stringBuilder.append(new String(buffer, 0, bufferSize));
                                 }
                                 attachmentContent = stringBuilder.toString();
-                                checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
+                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
                                 if (checkEmail) {
                                     ImportEmailRapFile.importData(attachmentContent);
+                                    InsertEmail.insertEmail(ImportEmailRapFile.importData(attachmentContent), senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
@@ -187,9 +190,10 @@ public class EmailProcess {
                                     stringBuilder.append(new String(buffer, 0, bufferSize));
                                 }
                                 attachmentContent = stringBuilder.toString();
-                                checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
+                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
                                 if (checkEmail) {
                                     ImportEmailDfd.importData(attachmentContent);
+                                    InsertEmail.insertEmail(ImportEmailDfd.importData(attachmentContent), senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
@@ -205,9 +209,10 @@ public class EmailProcess {
                                     output.write(buffer, 0, n);
                                 }
                                 xlsContent = output.toString();
-                                checkEmail = InsertEmailInfor.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
+                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
                                 if (checkEmail) {
                                     ImportEmailMissingConfig.importData(xlsContent);
+                                    InsertEmail.insertEmail(ImportEmailMissingConfig.importData(xlsContent), senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
                                     targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
