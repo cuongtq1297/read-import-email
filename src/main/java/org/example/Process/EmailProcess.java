@@ -3,6 +3,7 @@ package org.example.Process;
 import com.sun.mail.util.BASE64DecoderStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.example.Get_config.*;
 import org.example.Import_data.*;
 import org.example.Insert_email_infor.CheckEmail;
 import org.example.Insert_email_infor.InsertEmail;
@@ -10,6 +11,8 @@ import org.example.Insert_email_infor.InsertEmail;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import javax.activation.DataHandler;
 import javax.mail.BodyPart;
@@ -64,7 +67,7 @@ public class EmailProcess {
             DFD_ATTACHMENT_NAME = properties.getProperty("DFD_ATTACHMENT_NAME");
             MCL_ATTACHMENT_NAME = properties.getProperty("MCL_ATTACHMENT_NAME");
         } catch (Exception e) {
-            e.getMessage();
+            logger.error("error config" + e);
         }
     }
 
@@ -90,7 +93,14 @@ public class EmailProcess {
                         return new PasswordAuthentication(USER_NAME, PASSWORD);
                     }
                 });
+
         try {
+            List<String>[] lstHurMailConfig = GetHurEmailConfig.getHurSenderMail();
+            List<String>[] lstDfdMailConfig = GetDfdEmailConfig.getDfdSenderMail();
+            List<String>[] lstMclMailConfig = GetMclEmailConfig.getMclSenderMail();
+            List<String>[] lstTapMailConfig = GetTapEmailConfig.getTapSenderMail();
+            List<String>[] lstRapMailConfig = GetRapEmailConfig.getRapSenderMail();
+
             Store store = session.getStore("imaps");
             store.connect("imap.gmail.com", USER_NAME, PASSWORD);
             Folder folder = store.getFolder("INBOX");
@@ -107,6 +117,7 @@ public class EmailProcess {
                 int startIdx = message.getFrom()[0].toString().indexOf("<") + 1;
                 int endIdx = message.getFrom()[0].toString().indexOf(">");
                 String senderMail = message.getFrom()[0].toString().substring(startIdx, endIdx);
+                String subjectMail = message.getSubject();
 
                 // kiểm tra các phần của email có multipart hay là text
                 if (message.getContent() instanceof Multipart) {
@@ -120,7 +131,10 @@ public class EmailProcess {
                             String fileName = bodyPart.getFileName();
 
                             // email canh bao hur
-                            if (fileName.contains(HUR_ATTACHMENT_NAME) && fileName.endsWith(".csv")) {
+                            if (lstHurMailConfig[0].contains(senderMail) &&
+                                    lstHurMailConfig[1].contains(subjectMail) &&
+                                    fileName.contains(lstHurMailConfig[3].get(0)) &&
+                                    fileName.endsWith(lstHurMailConfig[4].get(0))) {
                                 BASE64DecoderStream base64DecoderStream = null;
                                 try {
                                     base64DecoderStream = (BASE64DecoderStream) ((MimeBodyPart) bodyPart).getContent();
@@ -143,7 +157,10 @@ public class EmailProcess {
                                 }
                             }
                             // email canh bao tap missing
-                            if (fileName.endsWith(".txt") && fileName.contains(TAP_ATTACHMENT_NAME)) {
+                            if (lstTapMailConfig[0].contains(senderMail) &&
+                                    lstTapMailConfig[1].contains(subjectMail) &&
+                                    fileName.contains(lstTapMailConfig[3].get(0)) &&
+                                    fileName.endsWith(lstTapMailConfig[4].get(0))) {
                                 String attachmentContent = "";
                                 // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
                                 BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -161,7 +178,10 @@ public class EmailProcess {
                                 }
                             }
                             // email canh bao rap file
-                            if (fileName.endsWith(".txt") && fileName.contains(RAP_ATTACHMENT_NAME)) {
+                            if (lstRapMailConfig[0].contains(senderMail) &&
+                                    lstRapMailConfig[1].contains(subjectMail) &&
+                                    fileName.contains(lstRapMailConfig[3].get(0)) &&
+                                    fileName.endsWith(lstRapMailConfig[4].get(0))) {
                                 String attachmentContent = "";
                                 // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
                                 BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -180,7 +200,10 @@ public class EmailProcess {
                                 }
                             }
                             // email canh bao dfd
-                            if (fileName.endsWith(".txt") && fileName.contains(DFD_ATTACHMENT_NAME)) {
+                            if (lstDfdMailConfig[0].contains(senderMail) &&
+                                    lstDfdMailConfig[1].contains(subjectMail) &&
+                                    fileName.contains(lstDfdMailConfig[3].get(0)) &&
+                                    fileName.endsWith(lstDfdMailConfig[4].get(0))) {
                                 String attachmentContent = "";
                                 // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
                                 BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -200,7 +223,10 @@ public class EmailProcess {
                             }
 
                             // email canh bao missing config
-                            if (fileName.endsWith(".xls") && fileName.contains(MCL_ATTACHMENT_NAME)) {
+                            if (lstMclMailConfig[0].contains(senderMail) &&
+                                    lstMclMailConfig[1].contains(subjectMail) &&
+                                    fileName.contains(lstMclMailConfig[3].get(0)) &&
+                                    fileName.endsWith(lstMclMailConfig[4].get(0))) {
                                 String xlsContent = "";
                                 InputStream is = bodyPart.getInputStream();
                                 ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -224,7 +250,7 @@ public class EmailProcess {
             folder.close(false);
             store.close();
         } catch (MessagingException | IOException | SQLException e) {
-            logger.error("import data fail " + e);
+            logger.error("import data fail \n" + e);
         }
     }
 

@@ -21,6 +21,7 @@ public class Process {
     }
     public static void main(String[] args) throws SQLException {
         Timer timer = new Timer();
-        timer.schedule(new MyTask(), 0, 5 * 60 * 1000); //schedule the task to run every 5 minutes
+        //schedule the task to run every 5 minutes
+        timer.schedule(new MyTask(), 0, 5 * 60 * 1000);
     }
 }
