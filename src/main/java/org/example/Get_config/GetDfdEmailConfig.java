@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GetDfdEmailConfig {
-    private static final Logger logger = LogManager.getLogger(GetRapEmailConfig.class);
+    private static final Logger logger = LogManager.getLogger(GetDfdEmailConfig.class);
     public static List<String>[] getDfdSenderMail() {
         List<String> lstSubjectMails = new ArrayList<>();
         List<String> lstSenderMails = new ArrayList<>();

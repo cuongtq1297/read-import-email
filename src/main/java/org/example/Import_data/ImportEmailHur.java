@@ -11,7 +11,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ImportEmailHur {
     private static final Logger logger = LogManager.getLogger(ImportEmailHur.class);
@@ -29,22 +31,26 @@ public class ImportEmailHur {
                     "(sender, recipient, sequence_no, threshold, date_time_of_analysis, date_time_of_report_creation, BEGINNING_OF_THE_OBSERVATION_PERIOD, END_OF_THE_OBSERVATION_PERIOD,create_at)\n" +
                     "VALUES(?, ?, ?, ?, ?, ?, ?, ?,NOW())";
             ps = connection.prepareStatement(importSql);
+            Map<String, String> map1 = new HashMap<>();
+            Map<String, String> map2 = new HashMap<>();
+            Map<String, String> mapMerge = new HashMap<>();
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("H")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    ps.setString(1, fields.get(1));
-                    ps.setString(2, fields.get(2));
-                    ps.setString(3, fields.get(3));
-                    ps.setString(4, fields.get(4));
-                    ps.setString(5, fields.get(5));
-                    ps.setString(6, fields.get(6));
-                }
-                if (line.startsWith("N")) {
+                    map1.put("sender",fields.get(1));
+                    map1.put("recipient",fields.get(2));
+                    map1.put("sequence_no",fields.get(3));
+                    map1.put("threshold",fields.get(4));
+                    map1.put("date_time_of_analysis",fields.get(5));
+                    map1.put("date_time_of_report_creation",fields.get(6));
+                } else if (line.startsWith("N")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    ps.setString(7, fields.get(1));
-                    ps.setString(8, fields.get(2));
+                    map2.put("BEGINNING_OF_THE_OBSERVATION_PERIOD",fields.get(1));
+                    map2.put("END_OF_THE_OBSERVATION_PERIOD",fields.get(2));
                 }
             }
+            // Làm dở
+            mapMerge = mergeMaps(map1,map2);
             resultInsert =  ps.executeUpdate();
             if(resultInsert == 1){
                 result = true;
@@ -56,6 +62,13 @@ public class ImportEmailHur {
         } finally {
             connection.close();
             ps.close();
+        }
+        return result;
+    }
+    public static Map<String, String> mergeMaps(Map<String, String>... maps) {
+        Map<String, String> result = new HashMap<>();
+        for (Map<String, String> map : maps) {
+            result.putAll(map);
         }
         return result;
     }
