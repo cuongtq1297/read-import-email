@@ -5,31 +5,24 @@ import org.apache.logging.log4j.Logger;
 import org.example.Database.GetConnection;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ImportEmailRapFile {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
-    public static boolean importData(String data) throws SQLException {
+    public static boolean importData(String data) throws Exception {
+        Map<String, String> map = new HashMap<>();
         boolean result = false;
-        int resultInsert = 0;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         boolean isReading = false;
         String line;
-        Connection connection = null;
-        PreparedStatement ps = null;
         StringBuilder sb = new StringBuilder();
-        String importSql = "INSERT INTO email.rap_email_attachment_data" +
-                "(rap_file,tap_file,date_received,tap_charge,record_type,error_charge,error_code,error_description,create_at)" +
-                "values(?, ?, ?, ?, ?, ?, ?, ?,NOW())";
         try {
-            connection = GetConnection.connect();
-            connection.setAutoCommit(false);
-            ps = connection.prepareStatement(importSql);
             while ((line = reader.readLine()) != null){
                 if(line.contains("Received")){
                     isReading = true;
@@ -40,33 +33,67 @@ public class ImportEmailRapFile {
                 }
             }
             String[] fields = sb.toString().split("\\s+");
-            String rapFile = fields[0];
-            String tapFile = fields[1];
-            String dateReceived = fields[2];
-            String tapCharge = fields[3];
-            String recordType = fields[4];
-            String errorCharge = fields[5];
-            String errorCode = fields[6];
             String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
-            ps.setString(1,rapFile);
-            ps.setString(2,tapFile);
-            ps.setString(3,dateReceived);
-            ps.setString(4,tapCharge);
-            ps.setString(5,recordType);
-            ps.setString(6,errorCharge);
-            ps.setString(7,errorCode);
-            ps.setString(8,errorDescription);
-
-            resultInsert =  ps.executeUpdate();
-            if(resultInsert == 1){
-                result = true;
+            map.put("rap_file",fields[0]);
+            map.put("tap_file",fields[1]);
+            map.put("date_received",fields[2]);
+            map.put("tap_charge",fields[3]);
+            map.put("record_type",fields[4]);
+            map.put("error_charge",fields[5]);
+            map.put("error_code",fields[6]);
+            map.put("error_description",errorDescription);
+            result = InsertData(map);
+            reader.close();
+        } catch (Exception e) {
+            logger.error("import data fail" + e);
+        }
+        return result;
+    }
+    public static boolean InsertData(Map map) throws Exception {
+        boolean result = false;
+        int resultInsert = 0;
+        Connection connection = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            connection = GetConnection.connect();
+            connection.setAutoCommit(false);
+            String getDataImportConfig = "select fields from email.data_import_config where type = 'RAP'";
+            ps = connection.prepareStatement(getDataImportConfig);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                String fields = rs.getString("fields");
+                String[] fieldNames = fields.split(",");
+                String insertQuery = "INSERT INTO email.rap_email_attachment_data (";
+                for (int i = 0; i < fieldNames.length; i++) {
+                    insertQuery += fieldNames[i];
+                    if (i < fieldNames.length - 1) {
+                        insertQuery += ",";
+                    }
+                }
+                insertQuery += ") VALUES (";
+                for (int i = 0; i < fieldNames.length; i++) {
+                    insertQuery += "?";
+                    if (i < fieldNames.length - 1) {
+                        insertQuery += ",";
+                    }
+                }
+                insertQuery += ")";
+                ps = connection.prepareStatement(insertQuery);
+                for (int i = 0; i < fieldNames.length; i++) {
+                    ps.setString(i + 1, String.valueOf(map.get(fieldNames[i])));
+                }
+                resultInsert = ps.executeUpdate();
+                if (resultInsert == 1) {
+                    result = true;
+                }
             }
             connection.commit();
-            reader.close();
-        } catch (SQLException | IOException e) {
-            logger.error("import data fail" + e);
+        } catch (Exception e){
+            logger.error(e);
         } finally {
             connection.close();
+            rs.close();
             ps.close();
         }
         return result;
