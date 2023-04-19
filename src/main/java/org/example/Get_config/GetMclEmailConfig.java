@@ -20,6 +20,7 @@ public class GetMclEmailConfig {
         String ipDb = "";
         String userPassword = "";
         String patternSelector = "";
+        String tableImport = "";
         Connection connection = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -44,6 +45,8 @@ public class GetMclEmailConfig {
                 ipDb = rs.getString("ip_db");
 
                 userPassword = rs.getString("user_password_db");
+
+                tableImport = rs.getString("table_import");
             }
         } catch (Exception e) {
             logger.error("error get email config " + e);
@@ -59,6 +62,7 @@ public class GetMclEmailConfig {
         list.add(4, ipDb);
         list.add(5, user);
         list.add(6, password);
+        list.add(7, tableImport);
         return list;
     }
 }

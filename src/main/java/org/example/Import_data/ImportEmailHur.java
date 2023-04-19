@@ -18,7 +18,7 @@ import java.util.Map;
 public class ImportEmailHur {
     private static final Logger logger = LogManager.getLogger(ImportEmailHur.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         boolean result = false;
@@ -71,14 +71,14 @@ public class ImportEmailHur {
                 }
                 if (!map3.isEmpty() && line.startsWith("P")) {
                     mapMerge = mergeMaps(map1, map2, map3);
-                    result = InsertData(connection1,connection2, mapMerge);
+                    result = InsertData(connection1, connection2, mapMerge, tableImport);
                     if (!result) {
                         break;
                     }
                 }
                 if (!map4.isEmpty() && line.startsWith("C")) {
                     mapMerge = mergeMaps(map1, map2, map4);
-                    result = InsertData(connection1,connection2, mapMerge);
+                    result = InsertData(connection1, connection2, mapMerge, tableImport);
                     if (!result) {
                         break;
                     }
@@ -105,7 +105,7 @@ public class ImportEmailHur {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1,Connection connection2, Map mapMerge) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, Map mapMerge, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -117,7 +117,7 @@ public class ImportEmailHur {
             while (rs.next()) {
                 String fields = rs.getString("fields");
                 String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO email.hur_email_attachment_data (";
+                String insertQuery = "INSERT INTO " + tableImport + " (";
                 for (int i = 0; i < fieldNames.length; i++) {
                     insertQuery += fieldNames[i];
                     if (i < fieldNames.length - 1) {

@@ -15,7 +15,8 @@ import java.util.Map;
 
 public class ImportEmailMissingConfig {
     private static final Logger logger = LogManager.getLogger(ImportEmailMissingConfig.class);
-    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
         boolean result = false;
         Connection connection2 = null;
         Connection connection1 = null;
@@ -28,17 +29,17 @@ public class ImportEmailMissingConfig {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split("\\s+");
-                if(!parts[0].equals("Tapname")){
-                    map.put("tap_name",parts[0]);
-                    map.put("record",parts[1]);
-                    map.put("sdr_amount",parts[2]);
-                    result = InsertData(connection1,connection2,map);
-                    if (!result){
+                if (!parts[0].equals("Tapname")) {
+                    map.put("tap_name", parts[0]);
+                    map.put("record", parts[1]);
+                    map.put("sdr_amount", parts[2]);
+                    result = InsertData(connection1, connection2, map, tableImport);
+                    if (!result) {
                         break;
                     }
                 }
             }
-            if (result){
+            if (result) {
                 connection2.commit();
             }
             reader.close();
@@ -50,7 +51,8 @@ public class ImportEmailMissingConfig {
         }
         return result;
     }
-    public static boolean InsertData(Connection connection1,Connection connection2, Map map) throws Exception {
+
+    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -62,7 +64,7 @@ public class ImportEmailMissingConfig {
             while (rs.next()) {
                 String fields = rs.getString("fields");
                 String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO email.mcl_email_attachment_data (";
+                String insertQuery = "INSERT INTO " + tableImport + " (";
                 for (int i = 0; i < fieldNames.length; i++) {
                     insertQuery += fieldNames[i];
                     if (i < fieldNames.length - 1) {

@@ -17,7 +17,7 @@ import java.util.Map;
 public class ImportEmailRapFile {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         Map<String, String> map = new HashMap<>();
@@ -49,7 +49,7 @@ public class ImportEmailRapFile {
             map.put("error_charge", fields[5]);
             map.put("error_code", fields[6]);
             map.put("error_description", errorDescription);
-            result = InsertData(connection1, connection2, map);
+            result = InsertData(connection1, connection2, map, tableImport);
             reader.close();
             if (result) {
                 connection2.commit();
@@ -63,7 +63,7 @@ public class ImportEmailRapFile {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map map) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
 
@@ -77,7 +77,7 @@ public class ImportEmailRapFile {
                 result = false;
                 String fields = rs.getString("fields");
                 String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO email.rap_email_attachment_data (";
+                String insertQuery = "INSERT INTO " + tableImport + " (";
                 for (int i = 0; i < fieldNames.length; i++) {
                     insertQuery += fieldNames[i];
                     if (i < fieldNames.length - 1) {

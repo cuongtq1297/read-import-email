@@ -16,7 +16,7 @@ import java.util.Map;
 public class ImportEmailDfd {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         Map<String, String> map = new HashMap<>();
@@ -58,7 +58,7 @@ public class ImportEmailDfd {
                 map.put("rj", fields[17]);
                 map.put("qr", fields[18]);
                 map.put("sn", fields[19]);
-                result = InsertData(connection1, connection2, map);
+                result = InsertData(connection1, connection2, map, tableImport);
                 if (!result) {
                     break;
                 }
@@ -76,7 +76,7 @@ public class ImportEmailDfd {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map map) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -88,7 +88,7 @@ public class ImportEmailDfd {
             while (rs.next()) {
                 String fields = rs.getString("fields");
                 String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO email.dfd_email_attachment_data (";
+                String insertQuery = "INSERT INTO " + tableImport + " (";
                 for (int i = 0; i < fieldNames.length; i++) {
                     insertQuery += fieldNames[i];
                     if (i < fieldNames.length - 1) {

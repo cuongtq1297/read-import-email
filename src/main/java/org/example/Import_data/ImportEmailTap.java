@@ -17,7 +17,7 @@ import java.util.Map;
 public class ImportEmailTap {
     private static final Logger logger = LogManager.getLogger(ImportEmailTap.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         BufferedReader reader = new BufferedReader(new StringReader(data));
@@ -110,7 +110,7 @@ public class ImportEmailTap {
                 map.put("error", error);
                 map.put("action", action);
                 map.put("type", "TAP IN PENDING");
-                result = InsertData(connection1, connection2, map);
+                result = InsertData(connection1, connection2, map, tableImport);
                 if (!result) {
                     break;
                 }
@@ -158,7 +158,7 @@ public class ImportEmailTap {
                 map.put("error", error);
                 map.put("action", action);
                 map.put("type", "TAP OUT PENDING");
-                result = InsertData(connection1, connection2, map);
+                result = InsertData(connection1, connection2, map, tableImport);
                 if (!result) {
                     break;
                 }
@@ -174,7 +174,7 @@ public class ImportEmailTap {
                 map.put("tap_name", tapName);
                 map.put("information_tap_missing", informationTap);
                 map.put("type", "TAP IN MISSING");
-                result = InsertData(connection1, connection2, map);
+                result = InsertData(connection1, connection2, map, tableImport);
                 if (!result) {
                     break;
                 }
@@ -191,7 +191,7 @@ public class ImportEmailTap {
                 map.put("tap_name", tapName);
                 map.put("information_tap_missing", informationTap);
                 map.put("type", "TAP OUT MISSING");
-                result = InsertData(connection1, connection2, map);
+                result = InsertData(connection1, connection2, map, tableImport);
                 if (!result) {
                     break;
                 }
@@ -210,7 +210,7 @@ public class ImportEmailTap {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map map) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -222,7 +222,7 @@ public class ImportEmailTap {
             while (rs.next()) {
                 String fields = rs.getString("fields");
                 String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO email.tap_email_attachment_data (";
+                String insertQuery = "INSERT INTO " + tableImport + " (";
                 for (int i = 0; i < fieldNames.length; i++) {
                     insertQuery += fieldNames[i];
                     if (i < fieldNames.length - 1) {

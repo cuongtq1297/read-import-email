@@ -123,9 +123,10 @@ public class EmailProcess {
                                     ((ArrayList) lstHurMailConfig.get(1)).contains(subjectMail) &&
                                     fileName.contains(lstHurMailConfig.get(2).toString()) &&
                                     fileName.endsWith(lstHurMailConfig.get(3).toString())) {
-                                String ipDb = lstDfdMailConfig.get(4).toString();
-                                String user = lstDfdMailConfig.get(5).toString();
-                                String password = lstDfdMailConfig.get(6).toString();
+                                String ipDb = lstHurMailConfig.get(4).toString();
+                                String user = lstHurMailConfig.get(5).toString();
+                                String password = lstHurMailConfig.get(6).toString();
+                                String tableImport = lstHurMailConfig.get(7).toString();
                                 BASE64DecoderStream base64DecoderStream = null;
                                 try {
                                     base64DecoderStream = (BASE64DecoderStream) ((MimeBodyPart) bodyPart).getContent();
@@ -143,7 +144,7 @@ public class EmailProcess {
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
 
                                 if (checkEmail) {
-                                    resultImport = ImportEmailHur.importData(content, ipDb, user, password);
+                                    resultImport = ImportEmailHur.importData(content, ipDb, user, password, tableImport);
                                     InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
@@ -153,9 +154,10 @@ public class EmailProcess {
                                     ((ArrayList) lstTapMailConfig.get(1)).contains(subjectMail) &&
                                     fileName.contains(lstTapMailConfig.get(2).toString()) &&
                                     fileName.endsWith(lstTapMailConfig.get(3).toString())) {
-                                String ipDb = lstDfdMailConfig.get(4).toString();
-                                String user = lstDfdMailConfig.get(5).toString();
-                                String password = lstDfdMailConfig.get(6).toString();
+                                String ipDb = lstTapMailConfig.get(4).toString();
+                                String user = lstTapMailConfig.get(5).toString();
+                                String password = lstTapMailConfig.get(6).toString();
+                                String tableImport = lstTapMailConfig.get(7).toString();
                                 String attachmentContent = "";
                                 // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
                                 BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -168,7 +170,7 @@ public class EmailProcess {
                                 attachmentContent = stringBuilder.toString();
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
                                 if (checkEmail) {
-                                    resultImport = ImportEmailTap.importData(attachmentContent,  ipDb, user, password);
+                                    resultImport = ImportEmailTap.importData(attachmentContent,  ipDb, user, password, tableImport);
                                     InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
@@ -178,9 +180,10 @@ public class EmailProcess {
                                     ((ArrayList) lstRapMailConfig.get(1)).contains(subjectMail) &&
                                     fileName.contains(lstRapMailConfig.get(2).toString()) &&
                                     fileName.endsWith(lstRapMailConfig.get(3).toString())) {
-                                String ipDb = lstDfdMailConfig.get(4).toString();
-                                String user = lstDfdMailConfig.get(5).toString();
-                                String password = lstDfdMailConfig.get(6).toString();
+                                String ipDb = lstRapMailConfig.get(4).toString();
+                                String user = lstRapMailConfig.get(5).toString();
+                                String password = lstRapMailConfig.get(6).toString();
+                                String tableImport = lstRapMailConfig.get(7).toString();
                                 String attachmentContent = "";
                                 // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
                                 BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -193,7 +196,7 @@ public class EmailProcess {
                                 attachmentContent = stringBuilder.toString();
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
                                 if (checkEmail) {
-                                    resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password);
+                                    resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password, tableImport);
                                     InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
@@ -206,6 +209,7 @@ public class EmailProcess {
                                 String ipDb = lstDfdMailConfig.get(4).toString();
                                 String user = lstDfdMailConfig.get(5).toString();
                                 String password = lstDfdMailConfig.get(6).toString();
+                                String tableImport = lstDfdMailConfig.get(7).toString();
                                 String attachmentContent = "";
                                 // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
                                 BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -218,7 +222,7 @@ public class EmailProcess {
                                 attachmentContent = stringBuilder.toString();
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
                                 if (checkEmail) {
-                                    resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password);
+                                    resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport);
                                     InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
@@ -229,9 +233,10 @@ public class EmailProcess {
                                     ((ArrayList) lstMclMailConfig.get(1)).contains(subjectMail) &&
                                     fileName.contains(lstMclMailConfig.get(2).toString()) &&
                                     fileName.endsWith(lstMclMailConfig.get(3).toString())) {
-                                String ipDb = lstDfdMailConfig.get(4).toString();
-                                String user = lstDfdMailConfig.get(5).toString();
-                                String password = lstDfdMailConfig.get(6).toString();
+                                String ipDb = lstMclMailConfig.get(4).toString();
+                                String user = lstMclMailConfig.get(5).toString();
+                                String password = lstMclMailConfig.get(6).toString();
+                                String tableImport = lstMclMailConfig.get(7).toString();
                                 String xlsContent = "";
                                 InputStream is = bodyPart.getInputStream();
                                 ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -243,7 +248,7 @@ public class EmailProcess {
                                 xlsContent = output.toString();
                                 checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
                                 if (checkEmail) {
-                                    resultImport = ImportEmailMissingConfig.importData(xlsContent, ipDb, user, password);
+                                    resultImport = ImportEmailMissingConfig.importData(xlsContent, ipDb, user, password, tableImport);
                                     InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
