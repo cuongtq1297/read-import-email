@@ -15,11 +15,13 @@ import java.util.List;
 public class GetHurEmailConfig {
     private static final Logger logger = LogManager.getLogger(GetHurEmailConfig.class);
 
-    public static List<String>[] getHurSenderMail() {
+    public static List<Object> getHurSenderMail() {
         List<String> lstSubjectMails = new ArrayList<>();
         List<String> lstSenderMails = new ArrayList<>();
-        List<String> lstPatternSelector = new ArrayList<>();
-        List<String> lstAttachFileType = new ArrayList<>();
+        String attachFileType = "";
+        String ipDb = "";
+        String userPassword = "";
+        String patternSelector = "";
         Connection connection = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -37,18 +39,28 @@ public class GetHurEmailConfig {
                 List<String> lstSubject = Arrays.asList(listSubject.split(";"));
                 lstSubjectMails.addAll(lstSubject);
 
-                String attachFileType = rs.getString("attach_file_type");
-                List<String> lstFileType = Arrays.asList(attachFileType);
-                lstAttachFileType.addAll(lstFileType);
+                patternSelector = rs.getString("pattern_selector");
 
-                String patternSelector = rs.getString("pattern_selector");
-                List<String> lstPattern = Arrays.asList(patternSelector.split(";"));
-                lstPatternSelector.addAll(lstPattern);
+                attachFileType = rs.getString("attach_file_type");
+
+                ipDb = rs.getString("ip_db");
+
+                userPassword = rs.getString("user_password_db");
             }
         } catch (Exception e) {
             logger.error("error get email config " + e);
         }
-        List<String>[] listAll = new List[]{lstSenderMails,lstSubjectMails,lstPatternSelector,lstAttachFileType};
-        return listAll;
+        String[] UP = userPassword.split(",");
+        String user = UP[0];
+        String password = UP[1];
+        List<Object> list = new ArrayList<>();
+        list.add(0, lstSenderMails);
+        list.add(1, lstSubjectMails);
+        list.add(2, patternSelector);
+        list.add(3, attachFileType);
+        list.add(4, ipDb);
+        list.add(5, user);
+        list.add(6, password);
+        return list;
     }
 }

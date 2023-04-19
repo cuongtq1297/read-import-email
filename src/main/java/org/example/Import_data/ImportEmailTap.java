@@ -3,6 +3,7 @@ package org.example.Import_data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.Database.GetConnection;
+import org.example.Database.GetConnectionToImport;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -16,8 +17,9 @@ import java.util.Map;
 public class ImportEmailTap {
     private static final Logger logger = LogManager.getLogger(ImportEmailTap.class);
 
-    public static boolean importData(String data) throws Exception {
-        Connection connection = null;
+    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+        Connection connection1 = null;
+        Connection connection2 = null;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         StringBuilder sbTapInPending = new StringBuilder();
         StringBuilder sbTapOutPending = new StringBuilder();
@@ -30,8 +32,9 @@ public class ImportEmailTap {
         boolean result = false;
         String line;
         try {
-            connection = GetConnection.connect();
-            connection.setAutoCommit(false);
+            connection1 = GetConnection.connect();
+            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+            connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
                 if (line.contains("TAP IN pending:")) {
                     isTapInPending = true;
@@ -107,7 +110,7 @@ public class ImportEmailTap {
                 map.put("error", error);
                 map.put("action", action);
                 map.put("type", "TAP IN PENDING");
-                result = InsertData(connection, map);
+                result = InsertData(connection1, connection2, map);
                 if (!result) {
                     break;
                 }
@@ -155,7 +158,7 @@ public class ImportEmailTap {
                 map.put("error", error);
                 map.put("action", action);
                 map.put("type", "TAP OUT PENDING");
-                result = InsertData(connection, map);
+                result = InsertData(connection1, connection2, map);
                 if (!result) {
                     break;
                 }
@@ -171,7 +174,7 @@ public class ImportEmailTap {
                 map.put("tap_name", tapName);
                 map.put("information_tap_missing", informationTap);
                 map.put("type", "TAP IN MISSING");
-                result = InsertData(connection, map);
+                result = InsertData(connection1, connection2, map);
                 if (!result) {
                     break;
                 }
@@ -188,33 +191,33 @@ public class ImportEmailTap {
                 map.put("tap_name", tapName);
                 map.put("information_tap_missing", informationTap);
                 map.put("type", "TAP OUT MISSING");
-                result = InsertData(connection, map);
+                result = InsertData(connection1, connection2, map);
                 if (!result) {
                     break;
                 }
             }
             readerTapOutMissing.close();
             if (result) {
-                connection.commit();
+                connection2.commit();
             }
         } catch (Exception e) {
             logger.error(e);
         } finally {
-            connection.close();
+            connection1.close();
+            connection2.close();
             reader.close();
         }
         return result;
     }
 
-    public static boolean InsertData(Connection connection, Map map) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, Map map) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            connection.setAutoCommit(false);
             String getDataImportConfig = "select fields from email.data_import_config where type = 'TAP'";
-            ps = connection.prepareStatement(getDataImportConfig);
+            ps = connection1.prepareStatement(getDataImportConfig);
             rs = ps.executeQuery();
             while (rs.next()) {
                 String fields = rs.getString("fields");
@@ -234,7 +237,7 @@ public class ImportEmailTap {
                     }
                 }
                 insertQuery += ")";
-                ps = connection.prepareStatement(insertQuery);
+                ps = connection2.prepareStatement(insertQuery);
                 for (int i = 0; i < fieldNames.length; i++) {
                     ps.setString(i + 1, String.valueOf(map.get(fieldNames[i])));
                 }

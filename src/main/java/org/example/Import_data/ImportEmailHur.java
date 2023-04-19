@@ -3,6 +3,7 @@ package org.example.Import_data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.Database.GetConnection;
+import org.example.Database.GetConnectionToImport;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -17,14 +18,16 @@ import java.util.Map;
 public class ImportEmailHur {
     private static final Logger logger = LogManager.getLogger(ImportEmailHur.class);
 
-    public static boolean importData(String data) throws Exception {
-        Connection connection = null;
+    public static boolean importData(String data, String ipDb, String user, String password) throws Exception {
+        Connection connection1 = null;
+        Connection connection2 = null;
         boolean result = false;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         String line;
         try {
-            connection = GetConnection.connect();
-            connection.setAutoCommit(false);
+            connection1 = GetConnection.connect();
+            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+            connection2.setAutoCommit(false);
             Map<String, String> map1 = new HashMap<>();
             Map<String, String> map2 = new HashMap<>();
             Map<String, String> map3 = new HashMap<>();
@@ -68,27 +71,28 @@ public class ImportEmailHur {
                 }
                 if (!map3.isEmpty() && line.startsWith("P")) {
                     mapMerge = mergeMaps(map1, map2, map3);
-                    result = InsertData(connection, mapMerge);
+                    result = InsertData(connection1,connection2, mapMerge);
                     if (!result) {
                         break;
                     }
                 }
                 if (!map4.isEmpty() && line.startsWith("C")) {
                     mapMerge = mergeMaps(map1, map2, map4);
-                    result = InsertData(connection, mapMerge);
+                    result = InsertData(connection1,connection2, mapMerge);
                     if (!result) {
                         break;
                     }
                 }
             }
             if (result) {
-                connection.commit();
+                connection2.commit();
             }
 
         } catch (Exception e) {
             logger.error("import data fail" + e);
         } finally {
-            connection.close();
+            connection1.close();
+            connection2.close();
         }
         return result;
     }
@@ -101,14 +105,14 @@ public class ImportEmailHur {
         return result;
     }
 
-    public static boolean InsertData(Connection connection, Map mapMerge) throws Exception {
+    public static boolean InsertData(Connection connection1,Connection connection2, Map mapMerge) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
             String getDataImportConfig = "select fields from email.data_import_config where type = 'HUR'";
-            ps = connection.prepareStatement(getDataImportConfig);
+            ps = connection1.prepareStatement(getDataImportConfig);
             rs = ps.executeQuery();
             while (rs.next()) {
                 String fields = rs.getString("fields");
@@ -128,7 +132,7 @@ public class ImportEmailHur {
                     }
                 }
                 insertQuery += ")";
-                ps = connection.prepareStatement(insertQuery);
+                ps = connection2.prepareStatement(insertQuery);
                 for (int i = 0; i < fieldNames.length; i++) {
                     ps.setString(i + 1, String.valueOf(mapMerge.get(fieldNames[i])));
                 }
@@ -137,7 +141,6 @@ public class ImportEmailHur {
                     result = true;
                 }
             }
-            connection.commit();
         } catch (Exception e) {
             logger.error(e);
         } finally {
