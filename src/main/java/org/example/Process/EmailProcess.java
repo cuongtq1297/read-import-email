@@ -85,7 +85,7 @@ public class EmailProcess {
             List<String>[] lstHurMailConfig = GetHurEmailConfig.getHurSenderMail();
             List<String>[] lstDfdMailConfig = GetDfdEmailConfig.getDfdSenderMail();
             List<String>[] lstMclMailConfig = GetMclEmailConfig.getMclSenderMail();
-//            List<String>[] lstTapMailConfig = GetTapEmailConfig.getTapSenderMail();
+            List<String>[] lstTapMailConfig = GetTapEmailConfig.getTapSenderMail();
             List<String>[] lstRapMailConfig = GetRapEmailConfig.getRapSenderMail();
 
             Store store = session.getStore("imaps");
@@ -144,27 +144,28 @@ public class EmailProcess {
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
-//                            // email canh bao tap missing
-//                            if (lstTapMailConfig[0].contains(senderMail) &&
-//                                    lstTapMailConfig[1].contains(subjectMail) &&
-//                                    fileName.contains(lstTapMailConfig[3].get(0)) &&
-//                                    fileName.endsWith(lstTapMailConfig[4].get(0))) {
-//                                String attachmentContent = "";
-//                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
-//                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
-//                                StringBuilder stringBuilder = new StringBuilder();
-//                                int bufferSize;
-//                                byte[] buffer = new byte[8 * 1024];
-//                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
-//                                    stringBuilder.append(new String(buffer, 0, bufferSize));
-//                                }
-//                                attachmentContent = stringBuilder.toString();
-//                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
-//                                if (checkEmail) {
-//                                    ImportEmailTap.importData(attachmentContent);
+                            // email canh bao tap missing
+                            if (lstTapMailConfig[0].contains(senderMail) &&
+                                    lstTapMailConfig[1].contains(subjectMail) &&
+                                    fileName.contains(lstTapMailConfig[2].get(0)) &&
+                                    fileName.endsWith(lstTapMailConfig[3].get(0))) {
+                                String attachmentContent = "";
+                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
+                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
+                                StringBuilder stringBuilder = new StringBuilder();
+                                int bufferSize;
+                                byte[] buffer = new byte[8 * 1024];
+                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
+                                    stringBuilder.append(new String(buffer, 0, bufferSize));
+                                }
+                                attachmentContent = stringBuilder.toString();
+                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
+                                if (checkEmail) {
+                                    resultImport = ImportEmailTap.importData(attachmentContent);
+                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
 //                                    targetFolder.appendMessages(new Message[]{message});
-//                                }
-//                            }
+                                }
+                            }
                             // email canh bao rap file
                             if (lstRapMailConfig[0].contains(senderMail) &&
                                     lstRapMailConfig[1].contains(subjectMail) &&
