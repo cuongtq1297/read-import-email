@@ -10,10 +10,8 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ImportEmailHur {
     private static final Logger logger = LogManager.getLogger(ImportEmailHur.class);
@@ -28,57 +26,16 @@ public class ImportEmailHur {
             connection1 = GetConnection.connect();
             connection2 = GetConnectionToImport.connect(ipDb, user, password);
             connection2.setAutoCommit(false);
-            Map<String, String> map1 = new HashMap<>();
-            Map<String, String> map2 = new HashMap<>();
-            Map<String, String> map3 = new HashMap<>();
-            Map<String, String> map4 = new HashMap<>();
-            Map<String, String> mapMerge = new HashMap<>();
             while ((line = reader.readLine()) != null) {
-                if (line.startsWith("H")) {
+                if (line.startsWith("P")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    map1.put("sender", fields.get(1));
-                    map1.put("recipient", fields.get(2));
-                    map1.put("sequence_no", fields.get(3));
-                    map1.put("threshold", fields.get(4));
-                    map1.put("date_time_of_analysis", fields.get(5));
-                    map1.put("date_time_of_report_creation", fields.get(6));
-                } else if (line.startsWith("N")) {
-                    List<String> fields = Arrays.asList(line.split(","));
-                    map2.put("BEGINNING_OF_THE_OBSERVATION_PERIOD", fields.get(1));
-                    map2.put("END_OF_THE_OBSERVATION_PERIOD", fields.get(2));
-                } else if (line.startsWith("P")) {
-                    List<String> fields = Arrays.asList(line.split(","));
-                    map3.put("imsi", fields.get(1));
-                    map3.put("date_first_event", fields.get(2));
-                    map3.put("time_first_event", fields.get(3));
-                    map3.put("date_last_event", fields.get(4));
-                    map3.put("time_last_event", fields.get(5));
-                    map3.put("dc", fields.get(6));
-                    map3.put("nc", fields.get(7));
-                    map3.put("volume", fields.get(8));
-                    map3.put("sdr", fields.get(9));
-                } else if (line.startsWith("C")) {
-                    List<String> fields = Arrays.asList(line.split(","));
-                    map4.put("imsi", fields.get(1));
-                    map4.put("date_first_event", fields.get(2));
-                    map4.put("time_first_event", fields.get(3));
-                    map4.put("date_last_event", fields.get(4));
-                    map4.put("time_last_event", fields.get(5));
-                    map4.put("dc", fields.get(6));
-                    map4.put("nc", fields.get(7));
-                    map4.put("volume", fields.get(8));
-                    map4.put("sdr", fields.get(9));
-                }
-                if (!map3.isEmpty() && line.startsWith("P")) {
-                    mapMerge = mergeMaps(map1, map2, map3);
-                    result = InsertData(connection1, connection2, mapMerge, tableImport);
+                    result = InsertData(connection1, connection2, fields, tableImport);
                     if (!result) {
                         break;
                     }
-                }
-                if (!map4.isEmpty() && line.startsWith("C")) {
-                    mapMerge = mergeMaps(map1, map2, map4);
-                    result = InsertData(connection1, connection2, mapMerge, tableImport);
+                } else if (line.startsWith("C")) {
+                    List<String> fields = Arrays.asList(line.split(","));
+                    result = InsertData(connection1, connection2, fields, tableImport);
                     if (!result) {
                         break;
                     }
@@ -97,49 +54,76 @@ public class ImportEmailHur {
         return result;
     }
 
-    public static Map<String, String> mergeMaps(Map<String, String>... maps) {
-        Map<String, String> result = new HashMap<>();
-        for (Map<String, String> map : maps) {
-            result.putAll(map);
-        }
-        return result;
-    }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map mapMerge, String tableImport) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
+        List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select fields from email.data_import_config where type = 'HUR'";
+            String getDataImportConfig = "select * from email.hur_email_config_detail";
             ps = connection1.prepareStatement(getDataImportConfig);
             rs = ps.executeQuery();
             while (rs.next()) {
-                String fields = rs.getString("fields");
-                String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO " + tableImport + " (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += fieldNames[i];
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
+                String type = rs.getString("type");
+                if (type.equals("text")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("datetime")) {
+                    String seqInFile = rs.getString("seq_in_file");
+                    String[] seqInFileLst = seqInFile.split(",");
+                    String dateTime = "";
+                    for (String seq : seqInFileLst) {
+                        int seqInt = Integer.parseInt(seq);
+                        if (!fields.get(seqInt).isBlank()) {
+                            dateTime += fields.get(seqInt);
+                        }
+                    }
+                    if (!dateTime.isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", formatDatetime(dateTime));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("number")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
                     }
                 }
-                insertQuery += ") VALUES (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += "?";
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
-                    }
+            }
+            String insertQuery = "INSERT INTO " + tableImport + " (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String column = (String) lstAll.get(i).get("column_import");
+                insertQuery += column;
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                insertQuery += ")";
-                ps = connection2.prepareStatement(insertQuery);
-                for (int i = 0; i < fieldNames.length; i++) {
-                    ps.setString(i + 1, String.valueOf(mapMerge.get(fieldNames[i])));
+            }
+            insertQuery += ") VALUES (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String value = (String) lstAll.get(i).get("value");
+                insertQuery += "'" + value + "'";
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                resultInsert = ps.executeUpdate();
-                if (resultInsert == 1) {
-                    result = true;
-                }
+            }
+            insertQuery += ")";
+            ps = connection2.prepareStatement(insertQuery);
+            resultInsert = ps.executeUpdate();
+            if (resultInsert == 1) {
+                result = true;
             }
         } catch (Exception e) {
             logger.error(e);
@@ -148,5 +132,18 @@ public class ImportEmailHur {
             rs.close();
         }
         return result;
+    }
+
+    public static String formatDatetime(String dateTimeString) throws Exception {
+        String formattedDateTime = "";
+        try {
+            SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+            SimpleDateFormat outputFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date dateTime = inputFormatter.parse(dateTimeString);
+            formattedDateTime = outputFormatter.format(dateTime);
+        } catch (Exception e) {
+            logger.error(e);
+        }
+        return formattedDateTime;
     }
 }
