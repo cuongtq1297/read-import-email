@@ -10,9 +10,8 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ImportEmailRapFile {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
@@ -47,36 +46,36 @@ public class ImportEmailRapFile {
                 }
             }
             if (!sbRapIn.toString().contains("No RAP IN Files created")) {
+                result = false;
                 String[] fields = sbRapIn.toString().split("\\s+");
+                List<String> list = new ArrayList<>();
                 String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
-                map.put("rap_file", fields[0]);
-                map.put("tap_file", fields[1]);
-                map.put("date_received", fields[2]);
-                map.put("tap_charge", fields[3]);
-                map.put("record_type", fields[4]);
-                map.put("error_charge", fields[5]);
-                map.put("error_code", fields[6]);
-                map.put("error_description", errorDescription);
-                map.put("direction","I");
-                map.put("hplmn",fields[1].substring(3,8));
-                map.put("vplmn",fields[1].substring(8,13));
-                result = InsertData(connection1, connection2, map, tableImport);
+                list.add(0,fields[0]);
+                list.add(1,fields[1]);
+                list.add(2,fields[2]);
+                list.add(3,fields[3]);
+                list.add(4,fields[4]);
+                list.add(5,fields[5]);
+                list.add(6,fields[6]);
+                list.add(7,errorDescription);
+                list.add(8,"I");
+                result = InsertData(connection1, connection2, list, tableImport);
             }
             if (!sbRapOut.toString().contains("No RAP OUT Files created")) {
+                result = false;
                 String[] fields = sbRapIn.toString().split("\\s+");
+                List<String> list = new ArrayList<>();
                 String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
-                map.put("rap_file", fields[0]);
-                map.put("tap_file", fields[1]);
-                map.put("date_received", fields[2]);
-                map.put("tap_charge", fields[3]);
-                map.put("record_type", fields[4]);
-                map.put("error_charge", fields[5]);
-                map.put("error_code", fields[6]);
-                map.put("error_description", errorDescription);
-                map.put("direction","O");
-                map.put("hplmn",fields[1].substring(8,13));
-                map.put("vplmn",fields[1].substring(3,8));
-                result = InsertData(connection1, connection2, map, tableImport);
+                list.add(0,fields[0]);
+                list.add(1,fields[1]);
+                list.add(2,fields[2]);
+                list.add(3,fields[3]);
+                list.add(4,fields[4]);
+                list.add(5,fields[5]);
+                list.add(6,fields[6]);
+                list.add(7,errorDescription);
+                list.add(8,"O");
+                result = InsertData(connection1, connection2, list, tableImport);
             }
             reader.close();
             if (result) {
@@ -91,45 +90,70 @@ public class ImportEmailRapFile {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
 
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            String getDataImportConfig = "select fields from email.data_import_config where type = 'RAP'";
+            String getDataImportConfig = "select * from email.rap_email_config_detail";
             ps = connection1.prepareStatement(getDataImportConfig);
             rs = ps.executeQuery();
+            List<Map<String, Object>> lstAll = new ArrayList<>();
             while (rs.next()) {
                 result = false;
-                String fields = rs.getString("fields");
-                String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO " + tableImport + " (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += fieldNames[i];
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
+                String type = rs.getString("type");
+                if (type.equals("text")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("datetime")) {
+                    String seqInFile = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seqInFile);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", formatDatetime(fields.get(seqInt)));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("number")) {
+                    String seqInFile = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seqInFile);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
                     }
                 }
-                insertQuery += ") VALUES (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += "?";
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
-                    }
+            }
+            String insertQuery = "INSERT INTO " + tableImport + " (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String column = (String) lstAll.get(i).get("column_import");
+                insertQuery += column;
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                insertQuery += ")";
-                ps = connection2.prepareStatement(insertQuery);
-                for (int i = 0; i < fieldNames.length; i++) {
-                    ps.setString(i + 1, String.valueOf(map.get(fieldNames[i])));
+            }
+            insertQuery += ") VALUES (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String value = (String) lstAll.get(i).get("value");
+                insertQuery += "'" + value + "'";
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                resultInsert = ps.executeUpdate();
-                if (resultInsert == 1) {
-                    result = true;
-                } else {
-                    break;
-                }
+            }
+            insertQuery += ")";
+            ps = connection2.prepareStatement(insertQuery);
+            resultInsert = ps.executeUpdate();
+            if (resultInsert == 1) {
+                result = true;
             }
         } catch (Exception e) {
             logger.error(e);
@@ -138,5 +162,17 @@ public class ImportEmailRapFile {
             ps.close();
         }
         return result;
+    }
+    public static String formatDatetime(String dateTimeString) throws Exception {
+        String formattedDateTime = "";
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+            Date date = formatter.parse(dateTimeString);
+            SimpleDateFormat newFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            formattedDateTime = newFormatter.format(date);
+        } catch (Exception e) {
+            logger.error(e);
+        }
+        return formattedDateTime;
     }
 }

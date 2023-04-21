@@ -10,8 +10,7 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ImportEmailMissingConfig {
     private static final Logger logger = LogManager.getLogger(ImportEmailMissingConfig.class);
@@ -20,7 +19,6 @@ public class ImportEmailMissingConfig {
         boolean result = false;
         Connection connection2 = null;
         Connection connection1 = null;
-        Map<String, String> map = new HashMap<>();
         try {
             connection1 = GetConnection.connect();
             connection2 = GetConnectionToImport.connect(ipDb, user, password);
@@ -28,12 +26,9 @@ public class ImportEmailMissingConfig {
             BufferedReader reader = new BufferedReader(new StringReader(data.trim()));
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] parts = line.split("\\s+");
-                if (!parts[0].equals("Tapname")) {
-                    map.put("tap_name", parts[0]);
-                    map.put("record", parts[1]);
-                    map.put("sdr_amount", parts[2]);
-                    result = InsertData(connection1, connection2, map, tableImport);
+                List<String> fields = Arrays.asList(line.split("\\s+"));
+                if (!fields.get(0).equals("Tapname")) {
+                    result = InsertData(connection1, connection2, fields, tableImport);
                     if (!result) {
                         break;
                     }
@@ -52,41 +47,63 @@ public class ImportEmailMissingConfig {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
+        List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select fields from email.data_import_config where type = 'MCL'";
+            String getDataImportConfig = "select * from email.mcl_email_config_detail";
             ps = connection1.prepareStatement(getDataImportConfig);
             rs = ps.executeQuery();
             while (rs.next()) {
-                String fields = rs.getString("fields");
-                String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO " + tableImport + " (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += fieldNames[i];
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
+                String type = rs.getString("type");
+                if (type.equals("text")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("number")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
                     }
                 }
-                insertQuery += ") VALUES (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += "?";
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
-                    }
+            }
+            String insertQuery = "INSERT INTO " + tableImport + " (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String column = (String) lstAll.get(i).get("column_import");
+                insertQuery += column;
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                insertQuery += ")";
-                ps = connection2.prepareStatement(insertQuery);
-                for (int i = 0; i < fieldNames.length; i++) {
-                    ps.setString(i + 1, String.valueOf(map.get(fieldNames[i])));
+            }
+            insertQuery += ") VALUES (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String value = (String) lstAll.get(i).get("value");
+                insertQuery += "'" + value + "'";
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                resultInsert = ps.executeUpdate();
-                if (resultInsert == 1) {
-                    result = true;
-                }
+            }
+            insertQuery += ")";
+            ps = connection2.prepareStatement(insertQuery);
+            resultInsert = ps.executeUpdate();
+            if (resultInsert == 1) {
+                result = true;
+            }
+            resultInsert = ps.executeUpdate();
+            if (resultInsert == 1) {
+                result = true;
             }
         } catch (Exception e) {
             logger.error(e);
