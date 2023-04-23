@@ -119,7 +119,7 @@ public class EmailProcess {
                             // kiểm tra định dạng file
                             String fileName = bodyPart.getFileName();
                             List isHur = FilterEmail.Filter(senderMail, subjectMail, fileName, lstHurMailConfig);
-//                            List isTap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstTapMailConfig);
+                            List isTap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstTapMailConfig);
                             List isRap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstRapMailConfig);
                             List isDfd = FilterEmail.Filter(senderMail, subjectMail, fileName, lstDfdMailConfig);
                             List isMcl = FilterEmail.Filter(senderMail, subjectMail, fileName, lstMclMailConfig);
@@ -152,29 +152,29 @@ public class EmailProcess {
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 }
                             }
-//                            // email canh bao tap missing
-//                            if (isTap) {
-//                                String ipDb = lstTapMailConfig.get(4).toString();
-//                                String user = lstTapMailConfig.get(5).toString();
-//                                String password = lstTapMailConfig.get(6).toString();
-//                                String tableImport = lstTapMailConfig.get(7).toString();
-//                                String attachmentContent = "";
-//                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
-//                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
-//                                StringBuilder stringBuilder = new StringBuilder();
-//                                int bufferSize;
-//                                byte[] buffer = new byte[8 * 1024];
-//                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
-//                                    stringBuilder.append(new String(buffer, 0, bufferSize));
-//                                }
-//                                attachmentContent = stringBuilder.toString();
-//                                checkEmail = CheckEmail.insertEmailInfor(senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
-//                                if (checkEmail) {
-//                                    resultImport = ImportEmailTap.importData(attachmentContent, ipDb, user, password, tableImport);
-//                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
-////                                    targetFolder.appendMessages(new Message[]{message});
-//                                }
-//                            }
+                            // email canh bao tap missing
+                            if (!isTap.isEmpty()) {
+                                String ipDb = (String) ((ArrayList) isTap.get(0)).get(7);
+                                String user = (String) ((ArrayList) isTap.get(0)).get(8);
+                                String password = (String) ((ArrayList) isTap.get(0)).get(9);
+                                String tableImport = (String) ((ArrayList) isTap.get(0)).get(10);
+                                String attachmentContent = "";
+                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
+                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
+                                StringBuilder stringBuilder = new StringBuilder();
+                                int bufferSize;
+                                byte[] buffer = new byte[8 * 1024];
+                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
+                                    stringBuilder.append(new String(buffer, 0, bufferSize));
+                                }
+                                attachmentContent = stringBuilder.toString();
+                                checkEmail = CheckEmail.check(senderMail, USER_NAME, message.getSubject(), fileName);
+                                if (checkEmail) {
+                                    resultImport = ImportEmailTap.importData(attachmentContent, ipDb, user, password, tableImport);
+                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
+//                                    targetFolder.appendMessages(new Message[]{message});
+                                }
+                            }
                             // email canh bao rap file
                             if (!isRap.isEmpty()) {
                                 String ipDb = (String) ((ArrayList) isRap.get(0)).get(7);

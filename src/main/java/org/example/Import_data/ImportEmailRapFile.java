@@ -102,7 +102,6 @@ public class ImportEmailRapFile {
             rs = ps.executeQuery();
             List<Map<String, Object>> lstAll = new ArrayList<>();
             while (rs.next()) {
-                result = false;
                 String type = rs.getString("type");
                 if (type.equals("text")) {
                     String seq = rs.getString("seq_in_file");

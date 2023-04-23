@@ -10,9 +10,8 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ImportEmailTap {
     private static final Logger logger = LogManager.getLogger(ImportEmailTap.class);
@@ -30,6 +29,7 @@ public class ImportEmailTap {
         boolean isTapInMissing = false;
         boolean isTapOutMissing = false;
         boolean result = false;
+        boolean run = true;
         String line;
         try {
             connection1 = GetConnection.connect();
@@ -60,143 +60,171 @@ public class ImportEmailTap {
                     sbTapOutMissing.append(line + "\n");
                 }
             }
-            String tapInPendingLst = sbTapInPending.toString().replaceAll("[-_]", "").trim();
-            String tapOutPendingLst = sbTapOutPending.toString().replaceAll("[-_]", "").trim();
+            String tapInPendingLst = sbTapInPending.toString().replaceAll("-{2,}", "").replaceAll("_", "").trim();
+            String tapOutPendingLst = sbTapOutPending.toString().replaceAll("-{2,}", "").replaceAll("_", "").trim();
             String tapInMissingLst = sbTapInMissing.toString().replaceAll("[-_]", "").trim();
             String tapOutMissingLst = sbTapOutMissing.toString().replaceAll("[-_]", "").trim();
 
             String[] tapInPendingParts = tapInPendingLst.split("\n\n");
             String[] tapOutPendingParts = tapOutPendingLst.split("\n\n");
+            if (run) {
+                for (String part : tapInPendingParts) {
+                    result = false;
+                    BufferedReader readerTapInPending = new BufferedReader(new StringReader(part));
+                    String lineTapInPending;
+                    String tapName = "";
+                    String pendingTime = "";
+                    String charge = "";
+                    String errorCharge = "";
+                    String firstCall = "";
+                    String fileCount = "";
+                    String error = "";
+                    String action = "";
+                    List<String> list = new ArrayList<>();
+                    while ((lineTapInPending = readerTapInPending.readLine()) != null) {
+                        if (lineTapInPending.contains("pending for")) {
+                            String[] fields = lineTapInPending.trim().split(" ");
+                            tapName = fields[0];
+                            pendingTime = fields[3];
+                        } else if (lineTapInPending.trim().startsWith("Charge")) {
+                            charge = lineTapInPending.split(":")[1].replaceAll("SDR", "").trim();
+                        } else if (lineTapInPending.trim().startsWith("Error Charge")) {
+                            errorCharge = lineTapInPending.split(":")[1].replaceAll("SDR", "").trim();
+                        } else if (lineTapInPending.trim().startsWith("First Call")) {
+                            firstCall = lineTapInPending.split(":")[1].trim();
+                        } else if (lineTapInPending.trim().startsWith("File Count")) {
+                            fileCount = lineTapInPending.split(":")[1].trim();
+                        } else if (lineTapInPending.trim().startsWith("Error")) {
+                            error = lineTapInPending.split(":")[1].trim();
+                        } else {
+                            action += lineTapInPending.replaceAll("[-_:]", "").replace("ACTION", "").trim() + "; ";
+                        }
+                    }
+                    readerTapInPending.close();
 
-            for (String part : tapInPendingParts) {
-                result = false;
-                Map<String, String> map = new HashMap<>();
-                BufferedReader readerTapInPending = new BufferedReader(new StringReader(part));
-                String lineTapInPending;
-                String tapName = "";
-                String pendingTime = "";
-                String charge = "";
-                String errorCharge = "";
-                String firstCall = "";
-                String fileCount = "";
-                String error = "";
-                String action = "";
-                while ((lineTapInPending = readerTapInPending.readLine()) != null) {
-                    if (lineTapInPending.contains("pending for")) {
-                        String[] fields = lineTapInPending.trim().split(" ");
-                        tapName = fields[0];
-                        pendingTime = String.join(" ", Arrays.copyOfRange(fields, 3, fields.length));
-                    } else if (lineTapInPending.trim().startsWith("Charge")) {
-                        charge = lineTapInPending.split(":")[1].trim();
-                    } else if (lineTapInPending.trim().startsWith("Error Charge")) {
-                        errorCharge = lineTapInPending.split(":")[1].trim();
-                    } else if (lineTapInPending.trim().startsWith("First Call")) {
-                        firstCall = lineTapInPending.split(":")[1].trim();
-                    } else if (lineTapInPending.trim().startsWith("File Count")) {
-                        fileCount = lineTapInPending.split(":")[1].trim();
-                    } else if (lineTapInPending.trim().startsWith("Error")) {
-                        error = lineTapInPending.split(":")[1].trim();
-                    } else {
-                        action += lineTapInPending.replaceAll("[-_:]", "").replace("ACTION", "").trim() + "; ";
+                    list.add(0, tapName);
+                    list.add(1, pendingTime);
+                    list.add(2, charge);
+                    list.add(3, errorCharge);
+                    list.add(4, firstCall);
+                    list.add(5, fileCount);
+                    list.add(6, error);
+                    list.add(7, action);
+                    list.add(8, "");
+                    list.add(9, "TAP OUT PENDING");
+                    result = InsertData(connection1, connection2, list, tableImport);
+                    if (!result) {
+                        run = false;
+                        break;
                     }
                 }
-                readerTapInPending.close();
-                map.put("tap_name", tapName);
-                map.put("pending_time", pendingTime);
-                map.put("charge", charge);
-                map.put("error_charge", errorCharge);
-                map.put("first_call", firstCall);
-                map.put("file_count", fileCount);
-                map.put("error", error);
-                map.put("action", action);
-                map.put("type", "TAP IN PENDING");
-                result = InsertData(connection1, connection2, map, tableImport);
-                if (!result) {
-                    break;
-                }
             }
+            if (run) {
+                for (String part : tapOutPendingParts) {
+                    result = false;
+                    BufferedReader readerTapInPending = new BufferedReader(new StringReader(part));
+                    String lineTapOutPending;
+                    String tapName = "";
+                    String pendingTime = "";
+                    String charge = "";
+                    String errorCharge = "";
+                    String firstCall = "";
+                    String fileCount = "";
+                    String error = "";
+                    String action = "";
+                    List<String> list = new ArrayList<>();
+                    while ((lineTapOutPending = readerTapInPending.readLine()) != null) {
+                        if (lineTapOutPending.contains("pending for")) {
+                            String[] fields = lineTapOutPending.trim().split(" ");
+                            tapName = fields[0];
+                            pendingTime = fields[3];
+                        } else if (lineTapOutPending.trim().startsWith("Charge")) {
+                            charge = lineTapOutPending.split(":")[1].replaceAll("SDR", "").trim();
+                        } else if (lineTapOutPending.trim().startsWith("Error Charge")) {
+                            errorCharge = lineTapOutPending.split(":")[1].replaceAll("SDR", "").trim();
+                        } else if (lineTapOutPending.trim().startsWith("First Call")) {
+                            firstCall = lineTapOutPending.split(":")[1].trim();
+                        } else if (lineTapOutPending.trim().startsWith("File Count")) {
+                            fileCount = lineTapOutPending.split(":")[1].trim();
+                        } else if (lineTapOutPending.trim().startsWith("Error")) {
+                            error = lineTapOutPending.split(":")[1].trim();
+                        } else {
+                            action += lineTapOutPending.replaceAll("[-_:]", "").replace("ACTION", "").trim() + "; ";
+                        }
+                    }
+                    readerTapInPending.close();
 
-            for (String part : tapOutPendingParts) {
-                result = false;
-                Map<String, String> map = new HashMap<>();
-                BufferedReader readerTapInPending = new BufferedReader(new StringReader(part));
-                String lineTapOutPending;
-                String tapName = "";
-                String pendingTime = "";
-                String charge = "";
-                String errorCharge = "";
-                String firstCall = "";
-                String fileCount = "";
-                String error = "";
-                String action = "";
-                while ((lineTapOutPending = readerTapInPending.readLine()) != null) {
-                    if (lineTapOutPending.contains("pending for")) {
-                        String[] fields = lineTapOutPending.trim().split(" ");
-                        tapName = fields[0];
-                        pendingTime = String.join(" ", Arrays.copyOfRange(fields, 3, fields.length));
-                    } else if (lineTapOutPending.trim().startsWith("Charge")) {
-                        charge = lineTapOutPending.split(":")[1].trim();
-                    } else if (lineTapOutPending.trim().startsWith("Error Charge")) {
-                        errorCharge = lineTapOutPending.split(":")[1].trim();
-                    } else if (lineTapOutPending.trim().startsWith("First Call")) {
-                        firstCall = lineTapOutPending.split(":")[1].trim();
-                    } else if (lineTapOutPending.trim().startsWith("File Count")) {
-                        fileCount = lineTapOutPending.split(":")[1].trim();
-                    } else if (lineTapOutPending.trim().startsWith("Error")) {
-                        error = lineTapOutPending.split(":")[1].trim();
-                    } else {
-                        action += lineTapOutPending.replaceAll("[-_:]", "").replace("ACTION", "").trim() + "; ";
+                    list.add(0, tapName);
+                    list.add(1, pendingTime);
+                    list.add(2, charge);
+                    list.add(3, errorCharge);
+                    list.add(4, firstCall);
+                    list.add(5, fileCount);
+                    list.add(6, error);
+                    list.add(7, action);
+                    list.add(8, "");
+                    list.add(9, "TAP OUT PENDING");
+                    result = InsertData(connection1, connection2, list, tableImport);
+                    if (!result) {
+                        break;
                     }
                 }
-                readerTapInPending.close();
-                map.put("tap_name", tapName);
-                map.put("pending_time", pendingTime);
-                map.put("charge", charge);
-                map.put("error_charge", errorCharge);
-                map.put("first_call", firstCall);
-                map.put("file_count", fileCount);
-                map.put("error", error);
-                map.put("action", action);
-                map.put("type", "TAP OUT PENDING");
-                result = InsertData(connection1, connection2, map, tableImport);
-                if (!result) {
-                    break;
-                }
             }
-            BufferedReader readerTapInMissing = new BufferedReader(new StringReader(tapInMissingLst));
-            String lineTapInMissing;
-            while ((lineTapInMissing = readerTapInMissing.readLine()) != null) {
-                result = false;
-                Map<String, String> map = new HashMap<>();
-                String[] fields = lineTapInMissing.split(" ");
-                String tapName = fields[2];
-                String informationTap = String.join(" ", Arrays.copyOfRange(fields, 3, fields.length));
-                map.put("tap_name", tapName);
-                map.put("information_tap_missing", informationTap);
-                map.put("type", "TAP IN MISSING");
-                result = InsertData(connection1, connection2, map, tableImport);
-                if (!result) {
-                    break;
+            if (run) {
+                BufferedReader readerTapInMissing = new BufferedReader(new StringReader(tapInMissingLst));
+                String lineTapInMissing;
+
+                while ((lineTapInMissing = readerTapInMissing.readLine()) != null) {
+                    List<String> list = new ArrayList<>();
+                    result = false;
+                    String[] fields = lineTapInMissing.split(" ");
+                    String tapName = fields[2];
+                    String informationTap = String.join(" ", Arrays.copyOfRange(fields, 3, fields.length));
+
+                    list.add(0, tapName);
+                    list.add(1, "");
+                    list.add(2, "");
+                    list.add(3, "");
+                    list.add(4, "");
+                    list.add(5, "");
+                    list.add(6, "");
+                    list.add(7, "");
+                    list.add(8, informationTap);
+                    list.add(9, "TAP IN MISSING");
+                    result = InsertData(connection1, connection2, list, tableImport);
+                    if (!result) {
+                        break;
+                    }
                 }
+                readerTapInMissing.close();
             }
-            readerTapInMissing.close();
-            BufferedReader readerTapOutMissing = new BufferedReader(new StringReader(tapOutMissingLst));
-            String lineTapOutMissing;
-            while ((lineTapOutMissing = readerTapOutMissing.readLine()) != null) {
-                result = false;
-                Map<String, String> map = new HashMap<>();
-                String[] fields = lineTapOutMissing.split(" ");
-                String tapName = fields[2];
-                String informationTap = String.join(" ", Arrays.copyOfRange(fields, 3, fields.length));
-                map.put("tap_name", tapName);
-                map.put("information_tap_missing", informationTap);
-                map.put("type", "TAP OUT MISSING");
-                result = InsertData(connection1, connection2, map, tableImport);
-                if (!result) {
-                    break;
+            if (run) {
+                BufferedReader readerTapOutMissing = new BufferedReader(new StringReader(tapOutMissingLst));
+                String lineTapOutMissing;
+                while ((lineTapOutMissing = readerTapOutMissing.readLine()) != null) {
+                    List<String> list = new ArrayList<>();
+                    result = false;
+                    String[] fields = lineTapOutMissing.split(" ");
+                    String tapName = fields[2];
+                    String informationTap = String.join(" ", Arrays.copyOfRange(fields, 3, fields.length));
+
+                    list.add(0, tapName);
+                    list.add(1, "");
+                    list.add(2, "");
+                    list.add(3, "");
+                    list.add(4, "");
+                    list.add(5, "");
+                    list.add(6, "");
+                    list.add(7, "");
+                    list.add(8, informationTap);
+                    list.add(9, "TAP OUT MISSING");
+                    result = InsertData(connection1, connection2, list, tableImport);
+                    if (!result) {
+                        break;
+                    }
                 }
+                readerTapOutMissing.close();
             }
-            readerTapOutMissing.close();
             if (result) {
                 connection2.commit();
             }
@@ -210,41 +238,68 @@ public class ImportEmailTap {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, Map map, String tableImport) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            String getDataImportConfig = "select fields from email.data_import_config where type = 'TAP'";
+            String getDataImportConfig = "select * from email.tap_email_config_detail";
             ps = connection1.prepareStatement(getDataImportConfig);
             rs = ps.executeQuery();
+            List<Map<String, Object>> lstAll = new ArrayList<>();
             while (rs.next()) {
-                String fields = rs.getString("fields");
-                String[] fieldNames = fields.split(",");
-                String insertQuery = "INSERT INTO " + tableImport + " (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += fieldNames[i];
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
+                String type = rs.getString("type");
+                if (type.equals("text")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("datetime")) {
+                    String seqInFile = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seqInFile);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", formatDatetime(fields.get(seqInt)));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("number")) {
+                    String seqInFile = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seqInFile);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("column_import", rs.getString("column_import"));
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
                     }
                 }
-                insertQuery += ") VALUES (";
-                for (int i = 0; i < fieldNames.length; i++) {
-                    insertQuery += "?";
-                    if (i < fieldNames.length - 1) {
-                        insertQuery += ",";
-                    }
+            }
+            String insertQuery = "INSERT INTO " + tableImport + " (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String column = (String) lstAll.get(i).get("column_import");
+                insertQuery += column;
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                insertQuery += ")";
-                ps = connection2.prepareStatement(insertQuery);
-                for (int i = 0; i < fieldNames.length; i++) {
-                    ps.setString(i + 1, String.valueOf(map.get(fieldNames[i])));
+            }
+            insertQuery += ") VALUES (";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String value = (String) lstAll.get(i).get("value");
+                insertQuery += "'" + value + "'";
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
                 }
-                resultInsert = ps.executeUpdate();
-                if (resultInsert == 1) {
-                    result = true;
-                }
+            }
+            insertQuery += ")";
+            ps = connection2.prepareStatement(insertQuery);
+            resultInsert = ps.executeUpdate();
+            if (resultInsert == 1) {
+                result = true;
             }
         } catch (Exception e) {
             logger.error(e);
@@ -253,5 +308,18 @@ public class ImportEmailTap {
             ps.close();
         }
         return result;
+    }
+
+    public static String formatDatetime(String dateTimeString) throws Exception {
+        String formattedDateTime = "";
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            Date date = formatter.parse(dateTimeString);
+            SimpleDateFormat newFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            formattedDateTime = newFormatter.format(date);
+        } catch (Exception e) {
+            logger.error(e);
+        }
+        return formattedDateTime;
     }
 }
