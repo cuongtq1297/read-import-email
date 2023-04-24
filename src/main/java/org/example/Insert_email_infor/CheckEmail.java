@@ -21,13 +21,13 @@ public class CheckEmail {
             connection = GetConnection.connect();
             connection.setAutoCommit(false);
             String checkSql = "select * from email.email_processing " +
-                    "where sender_mail = ? and subject = ? and receiver_mail = ? and received_date = ? and status = ?";
+                    "where sender_mail = ? and subject = ? and receiver_mail = ? and received_date = ? and status != ?";
             ps = connection.prepareStatement(checkSql);
             ps.setString(1,senderMail);
             ps.setString(2,subject);
             ps.setString(3,receiverMail);
             ps.setString(4,receivedDate);
-            ps.setString(5,"success");
+            ps.setString(5,"pending");
             rs = ps.executeQuery();
             if(!rs.next()){
                 result = true;

@@ -82,9 +82,11 @@ public class EmailProcess {
             Store store = session.getStore("imaps");
             store.connect("imap.gmail.com", USER_NAME, PASSWORD);
             Folder folder = store.getFolder("INBOX");
-            folder.open(Folder.READ_ONLY);
-//            Folder targetFolder = store.getFolder("PROCESS_SUCCESS");
+            folder.open(Folder.READ_WRITE);
+//            Folder targetFolder = store.getFolder("fail");
+//            targetFolder.open(Folder.READ_WRITE);
             Message[] messages = folder.getMessages();
+            Message[] failMessages = null;
             System.out.println("Có " + messages.length + " thư từ trong INBOX");
             for (int i = 0; i < messages.length; i++) {
                 boolean checkEmail = false;
@@ -156,7 +158,6 @@ public class EmailProcess {
                                             InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
                                         }
                                     }
-                                    ;
 //                                    targetFolder.appendMessages(new Message[]{message});
                                 } else if (!isTap.isEmpty()) { // email mcl
                                     String ipDb = (String) ((ArrayList) isTap.get(0)).get(7);
@@ -266,7 +267,8 @@ public class EmailProcess {
                     }
                 }
             }
-            folder.close(false);
+            folder.close();
+//            targetFolder.close();
             store.close();
         } catch (Exception e) {
             logger.error("import data fail \n" + e);
