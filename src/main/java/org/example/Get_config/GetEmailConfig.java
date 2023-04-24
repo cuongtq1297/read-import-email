@@ -17,17 +17,12 @@ public class GetEmailConfig {
 
     public static List<List<Object>> getConfig(String type) {
         List<List<Object>> lstAll = new ArrayList<>();
-        String attachFileType = "";
-        String ipDb = "";
-        String userPassword = "";
-        String patternSelector = "";
-        String tableImport = "";
         Connection connection = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
             connection = GetConnection.connect();
-            String getEmailConfig = "select * from email.email_config where type = ?";
+            String getEmailConfig = "select * from email.email_config where type = ? and NOW() BETWEEN effect_date AND expire_date";
             ps = connection.prepareStatement(getEmailConfig);
             ps.setString(1, type);
             rs = ps.executeQuery();
@@ -45,18 +40,21 @@ public class GetEmailConfig {
                 String patternAttachment = rs.getString("pattern_attachment");
                 List<String> lstPatternAttachment = Arrays.asList(patternAttachment.split(";"));
 
-                patternSelector = rs.getString("pattern_selector");
+                String patternSelector = rs.getString("pattern_selector");
 
-                attachFileType = rs.getString("attach_file_type");
+                String attachFileType = rs.getString("attach_file_type");
 
-                ipDb = rs.getString("ip_db");
+                String ipDb = rs.getString("ip_db");
 
-                userPassword = rs.getString("user_password_db");
+                String userPassword = rs.getString("user_password_db");
 
-                tableImport = rs.getString("table_import");
+                String tableImport = rs.getString("table_import");
+
                 String[] UP = userPassword.split(",");
                 String user = UP[0];
                 String password = UP[1];
+
+                int typeId = rs.getInt("type_id");
                 List<Object> list = new ArrayList<>();
                 list.add(0, lstSenderMail);
                 list.add(1, senderSelector);
@@ -69,6 +67,7 @@ public class GetEmailConfig {
                 list.add(8, user);
                 list.add(9, password);
                 list.add(10, tableImport);
+                list.add(11, typeId);
                 lstAll.add(list);
             }
 

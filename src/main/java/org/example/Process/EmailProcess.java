@@ -30,11 +30,6 @@ public class EmailProcess {
     private static String PASSWORD;
     private static String HOST;
     private static String PORT;
-    private static String HUR_TYPE;
-    private static String TAP_TYPE;
-    private static String RAP_TYPE;
-    private static String DFD_TYPE;
-    private static String MCL_TYPE;
 
     public static final String CONFIG_FILE_PATH = "config/email-infor.cfg";
 
@@ -48,12 +43,6 @@ public class EmailProcess {
             PASSWORD = properties.getProperty("PASSWORD");
             HOST = properties.getProperty("HOST");
             PORT = properties.getProperty("PORT");
-
-            HUR_TYPE = properties.getProperty("HUR_TYPE");
-            TAP_TYPE = properties.getProperty("TAP_TYPE");
-            RAP_TYPE = properties.getProperty("RAP_TYPE");
-            DFD_TYPE = properties.getProperty("DFD_TYPE");
-            MCL_TYPE = properties.getProperty("MCL_TYPE");
 
         } catch (Exception e) {
             logger.error("error config" + e);
@@ -107,141 +96,174 @@ public class EmailProcess {
                 int endIdx = message.getFrom()[0].toString().indexOf(">");
                 String senderMail = message.getFrom()[0].toString().substring(startIdx, endIdx);
                 String subjectMail = message.getSubject();
+                // xử lý string người nhận
+                String receiverMail = "";
+                if (message.getAllRecipients()[0].toString().contains("<")){
+                    int start = message.getAllRecipients()[0].toString().indexOf("<") + 1;
+                    int end = message.getAllRecipients()[0].toString().indexOf(">");
+                    receiverMail = message.getAllRecipients()[0].toString().substring(start, end);
+                } else {
+                    receiverMail = message.getAllRecipients()[0].toString();
+                }
 
-                // kiểm tra các phần của email có multipart hay là text
-                if (message.getContent() instanceof Multipart) {
-                    Multipart multipart = (Multipart) message.getContent();
-                    // duyệt qua từng phần của multipart
-                    for (int j = 0; j < multipart.getCount(); j++) {
-                        BodyPart bodyPart = multipart.getBodyPart(j);
-                        // kiểm tra phần có phải là file đính kèm được gửi từ email hay không
-                        if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase("attachment")) {
-                            // kiểm tra định dạng file
-                            String fileName = bodyPart.getFileName();
-                            List isHur = FilterEmail.Filter(senderMail, subjectMail, fileName, lstHurMailConfig);
-                            List isTap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstTapMailConfig);
-                            List isRap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstRapMailConfig);
-                            List isDfd = FilterEmail.Filter(senderMail, subjectMail, fileName, lstDfdMailConfig);
-                            List isMcl = FilterEmail.Filter(senderMail, subjectMail, fileName, lstMclMailConfig);
+                String receivedDate = message.getReceivedDate().toString();
+                // kiểm tra email đã xử lý hay chưa
+                checkEmail = CheckEmail.check(senderMail, receiverMail, subjectMail, receivedDate);
+                if (checkEmail) {
+                    // kiểm tra các phần của email có multipart hay là text
+                    if (message.getContent() instanceof Multipart) {
+                        Multipart multipart = (Multipart) message.getContent();
+                        // duyệt qua từng phần của multipart
+                        for (int j = 0; j < multipart.getCount(); j++) {
+                            BodyPart bodyPart = multipart.getBodyPart(j);
+                            // kiểm tra phần có phải là file đính kèm được gửi từ email hay không
+                            if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase("attachment")) {
+                                // kiểm tra định dạng file
+                                String fileName = bodyPart.getFileName();
+                                List isHur = FilterEmail.Filter(senderMail, subjectMail, fileName, lstHurMailConfig);
+                                List isTap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstTapMailConfig);
+                                List isRap = FilterEmail.Filter(senderMail, subjectMail, fileName, lstRapMailConfig);
+                                List isDfd = FilterEmail.Filter(senderMail, subjectMail, fileName, lstDfdMailConfig);
+                                List isMcl = FilterEmail.Filter(senderMail, subjectMail, fileName, lstMclMailConfig);
 
-                            // email canh bao hur
-                            if (!isHur.isEmpty()) {
-                                String ipDb = (String) ((ArrayList) isHur.get(0)).get(7);
-                                String user = (String) ((ArrayList) isHur.get(0)).get(8);
-                                String password = (String) ((ArrayList) isHur.get(0)).get(9);
-                                String tableImport = (String) ((ArrayList) isHur.get(0)).get(10);
-                                BASE64DecoderStream base64DecoderStream = null;
-                                try {
-                                    base64DecoderStream = (BASE64DecoderStream) ((MimeBodyPart) bodyPart).getContent();
-                                } catch (ClassCastException e) {
-                                    continue;
+                                // email canh bao hur
+                                if (!isHur.isEmpty()) {
+                                    String ipDb = (String) ((ArrayList) isHur.get(0)).get(7);
+                                    String user = (String) ((ArrayList) isHur.get(0)).get(8);
+                                    String password = (String) ((ArrayList) isHur.get(0)).get(9);
+                                    String tableImport = (String) ((ArrayList) isHur.get(0)).get(10);
+                                    int typeId = (int) ((ArrayList) isHur.get(0)).get(11);
+                                    BASE64DecoderStream base64DecoderStream = null;
+                                    try {
+                                        base64DecoderStream = (BASE64DecoderStream) ((MimeBodyPart) bodyPart).getContent();
+                                    } catch (ClassCastException e) {
+                                        continue;
+                                    }
+
+                                    String content;
+                                    if (base64DecoderStream != null) {
+                                        content = readContentFromBASE64DecoderStream(base64DecoderStream);
+                                    } else {
+                                        DataHandler handler = bodyPart.getDataHandler();
+                                        content = handler.getContent().toString();
+                                    }
+                                    boolean insertPending = InsertEmail.insertEmailPending(senderMail, subjectMail, fileName, typeId, receiverMail, receivedDate);
+                                    if (insertPending) {
+                                        resultImport = ImportEmailHur.importData(content, ipDb, user, password, tableImport, typeId);
+                                        if (resultImport) {
+                                            InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
+                                        }
+                                    }
+                                    ;
+//                                    targetFolder.appendMessages(new Message[]{message});
+
+                                }
+                                // email canh bao tap missing
+                                if (!isTap.isEmpty()) {
+                                    String ipDb = (String) ((ArrayList) isTap.get(0)).get(7);
+                                    String user = (String) ((ArrayList) isTap.get(0)).get(8);
+                                    String password = (String) ((ArrayList) isTap.get(0)).get(9);
+                                    String tableImport = (String) ((ArrayList) isTap.get(0)).get(10);
+                                    int typeId = (int) ((ArrayList) isTap.get(0)).get(11);
+                                    String attachmentContent = "";
+                                    // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
+                                    BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
+                                    StringBuilder stringBuilder = new StringBuilder();
+                                    int bufferSize;
+                                    byte[] buffer = new byte[8 * 1024];
+                                    while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
+                                        stringBuilder.append(new String(buffer, 0, bufferSize));
+                                    }
+                                    attachmentContent = stringBuilder.toString();
+                                    boolean insertPending = InsertEmail.insertEmailPending(senderMail, subjectMail, fileName, typeId, receiverMail, receivedDate);
+                                    if (insertPending) {
+                                        resultImport = ImportEmailTap.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                        if (resultImport) {
+                                            InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
+                                        }
+//                                    targetFolder.appendMessages(new Message[]{message});
+                                    }
+
+                                }
+                                // email canh bao rap file
+                                if (!isRap.isEmpty()) {
+                                    String ipDb = (String) ((ArrayList) isRap.get(0)).get(7);
+                                    String user = (String) ((ArrayList) isRap.get(0)).get(8);
+                                    String password = (String) ((ArrayList) isRap.get(0)).get(9);
+                                    String tableImport = (String) ((ArrayList) isRap.get(0)).get(10);
+                                    int typeId = (int) ((ArrayList) isRap.get(0)).get(11);
+                                    String attachmentContent = "";
+                                    // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
+                                    BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
+                                    StringBuilder stringBuilder = new StringBuilder();
+                                    int bufferSize;
+                                    byte[] buffer = new byte[8 * 1024];
+                                    while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
+                                        stringBuilder.append(new String(buffer, 0, bufferSize));
+                                    }
+                                    attachmentContent = stringBuilder.toString();
+                                    boolean insertPending = InsertEmail.insertEmailPending(senderMail, subjectMail, fileName, typeId, receiverMail, receivedDate);
+                                    if (insertPending) {
+                                        resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                        if (resultImport) {
+                                            InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
+                                        }
+//                                    targetFolder.appendMessages(new Message[]{message});
+                                    }
+
+                                }
+                                // email canh bao dfd
+                                if (!isDfd.isEmpty()) {
+                                    String ipDb = (String) ((ArrayList) isDfd.get(0)).get(7);
+                                    String user = (String) ((ArrayList) isDfd.get(0)).get(8);
+                                    String password = (String) ((ArrayList) isDfd.get(0)).get(9);
+                                    String tableImport = (String) ((ArrayList) isDfd.get(0)).get(10);
+                                    int typeId = (int) ((ArrayList) isDfd.get(0)).get(11);
+                                    String attachmentContent = "";
+                                    // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
+                                    BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
+                                    StringBuilder stringBuilder = new StringBuilder();
+                                    int bufferSize;
+                                    byte[] buffer = new byte[8 * 1024];
+                                    while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
+                                        stringBuilder.append(new String(buffer, 0, bufferSize));
+                                    }
+                                    attachmentContent = stringBuilder.toString();
+                                    boolean insertPending = InsertEmail.insertEmailPending(senderMail, subjectMail, fileName, typeId, receiverMail, receivedDate);
+                                    if (insertPending) {
+                                        resultImport   = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                        if (resultImport) {
+                                            InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
+                                        }
+//                                    targetFolder.appendMessages(new Message[]{message});
+                                    }
+
                                 }
 
-                                String content;
-                                if (base64DecoderStream != null) {
-                                    content = readContentFromBASE64DecoderStream(base64DecoderStream);
-                                } else {
-                                    DataHandler handler = bodyPart.getDataHandler();
-                                    content = handler.getContent().toString();
-                                }
-                                checkEmail = CheckEmail.check(senderMail, USER_NAME, message.getSubject(), fileName);
-
-                                if (checkEmail) {
-                                    resultImport = ImportEmailHur.importData(content, ipDb, user, password, tableImport);
-                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, HUR_TYPE);
+                                // email canh bao missing config
+                                if (!isMcl.isEmpty()) {
+                                    String ipDb = (String) ((ArrayList) isMcl.get(0)).get(7);
+                                    String user = (String) ((ArrayList) isMcl.get(0)).get(8);
+                                    String password = (String) ((ArrayList) isMcl.get(0)).get(9);
+                                    String tableImport = (String) ((ArrayList) isMcl.get(0)).get(10);
+                                    int typeId = (int) ((ArrayList) isMcl.get(0)).get(11);
+                                    String xlsContent = "";
+                                    InputStream is = bodyPart.getInputStream();
+                                    ByteArrayOutputStream output = new ByteArrayOutputStream();
+                                    byte[] buffer = new byte[1024];
+                                    int n = 0;
+                                    while ((n = is.read(buffer)) != -1) {
+                                        output.write(buffer, 0, n);
+                                    }
+                                    xlsContent = output.toString();
+                                    boolean insertPending = InsertEmail.insertEmailPending(senderMail, subjectMail, fileName, typeId, receiverMail, receivedDate);
+                                    if (insertPending) {
+                                        resultImport = ImportEmailMissingConfig.importData(xlsContent, ipDb, user, password, tableImport, typeId);
+                                        if (resultImport) {
+                                            InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
+                                        }
 //                                    targetFolder.appendMessages(new Message[]{message});
-                                }
-                            }
-                            // email canh bao tap missing
-                            if (!isTap.isEmpty()) {
-                                String ipDb = (String) ((ArrayList) isTap.get(0)).get(7);
-                                String user = (String) ((ArrayList) isTap.get(0)).get(8);
-                                String password = (String) ((ArrayList) isTap.get(0)).get(9);
-                                String tableImport = (String) ((ArrayList) isTap.get(0)).get(10);
-                                String attachmentContent = "";
-                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
-                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
-                                StringBuilder stringBuilder = new StringBuilder();
-                                int bufferSize;
-                                byte[] buffer = new byte[8 * 1024];
-                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
-                                    stringBuilder.append(new String(buffer, 0, bufferSize));
-                                }
-                                attachmentContent = stringBuilder.toString();
-                                checkEmail = CheckEmail.check(senderMail, USER_NAME, message.getSubject(), fileName);
-                                if (checkEmail) {
-                                    resultImport = ImportEmailTap.importData(attachmentContent, ipDb, user, password, tableImport);
-                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, TAP_TYPE);
-//                                    targetFolder.appendMessages(new Message[]{message});
-                                }
-                            }
-                            // email canh bao rap file
-                            if (!isRap.isEmpty()) {
-                                String ipDb = (String) ((ArrayList) isRap.get(0)).get(7);
-                                String user = (String) ((ArrayList) isRap.get(0)).get(8);
-                                String password = (String) ((ArrayList) isRap.get(0)).get(9);
-                                String tableImport = (String) ((ArrayList) isRap.get(0)).get(10);
-                                String attachmentContent = "";
-                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
-                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
-                                StringBuilder stringBuilder = new StringBuilder();
-                                int bufferSize;
-                                byte[] buffer = new byte[8 * 1024];
-                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
-                                    stringBuilder.append(new String(buffer, 0, bufferSize));
-                                }
-                                attachmentContent = stringBuilder.toString();
-                                checkEmail = CheckEmail.check(senderMail, USER_NAME, message.getSubject(), fileName);
-                                if (checkEmail) {
-                                    resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password, tableImport);
-                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, RAP_TYPE);
-//                                    targetFolder.appendMessages(new Message[]{message});
-                                }
-                            }
-                            // email canh bao dfd
-                            if (!isDfd.isEmpty()) {
-                                String ipDb = (String) ((ArrayList) isDfd.get(0)).get(7);
-                                String user = (String) ((ArrayList) isDfd.get(0)).get(8);
-                                String password = (String) ((ArrayList) isDfd.get(0)).get(9);
-                                String tableImport = (String) ((ArrayList) isDfd.get(0)).get(10);
-                                String attachmentContent = "";
-                                // Lấy InputStream của đối tượng BodyPart và giải mã BASE64 nếu cần
-                                BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
-                                StringBuilder stringBuilder = new StringBuilder();
-                                int bufferSize;
-                                byte[] buffer = new byte[8 * 1024];
-                                while ((bufferSize = base64DecoderStream.read(buffer)) != -1) {
-                                    stringBuilder.append(new String(buffer, 0, bufferSize));
-                                }
-                                attachmentContent = stringBuilder.toString();
-                                checkEmail = CheckEmail.check(senderMail, USER_NAME, message.getSubject(), fileName);
-                                if (checkEmail) {
-                                    resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport);
-                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, DFD_TYPE);
-//                                    targetFolder.appendMessages(new Message[]{message});
-                                }
-                            }
-
-                            // email canh bao missing config
-                            if (!isMcl.isEmpty()) {
-                                String ipDb = (String) ((ArrayList) isMcl.get(0)).get(7);
-                                String user = (String) ((ArrayList) isMcl.get(0)).get(8);
-                                String password = (String) ((ArrayList) isMcl.get(0)).get(9);
-                                String tableImport = (String) ((ArrayList) isMcl.get(0)).get(10);
-                                String xlsContent = "";
-                                InputStream is = bodyPart.getInputStream();
-                                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                                byte[] buffer = new byte[1024];
-                                int n = 0;
-                                while ((n = is.read(buffer)) != -1) {
-                                    output.write(buffer, 0, n);
-                                }
-                                xlsContent = output.toString();
-                                checkEmail = CheckEmail.check(senderMail, USER_NAME, message.getSubject(), fileName);
-                                if (checkEmail) {
-                                    resultImport = ImportEmailMissingConfig.importData(xlsContent, ipDb, user, password, tableImport);
-                                    InsertEmail.insertEmail(resultImport, senderMail, USER_NAME, message.getSubject(), fileName, MCL_TYPE);
-//                                    targetFolder.appendMessages(new Message[]{message});
+                                    }
                                 }
                             }
                         }

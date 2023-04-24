@@ -16,7 +16,7 @@ import java.util.*;
 public class ImportEmailRapFile {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, int typeId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         Map<String, String> map = new HashMap<>();
@@ -50,32 +50,32 @@ public class ImportEmailRapFile {
                 String[] fields = sbRapIn.toString().split("\\s+");
                 List<String> list = new ArrayList<>();
                 String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
-                list.add(0,fields[0]);
-                list.add(1,fields[1]);
-                list.add(2,fields[2]);
-                list.add(3,fields[3]);
-                list.add(4,fields[4]);
-                list.add(5,fields[5]);
-                list.add(6,fields[6]);
-                list.add(7,errorDescription);
-                list.add(8,"I");
-                result = InsertData(connection1, connection2, list, tableImport);
+                list.add(0, fields[0]);
+                list.add(1, fields[1]);
+                list.add(2, fields[2]);
+                list.add(3, fields[3]);
+                list.add(4, fields[4]);
+                list.add(5, fields[5]);
+                list.add(6, fields[6]);
+                list.add(7, errorDescription);
+                list.add(8, "I");
+                result = InsertData(connection1, connection2, list, tableImport, typeId);
             }
             if (!sbRapOut.toString().contains("No RAP OUT Files created")) {
                 result = false;
                 String[] fields = sbRapIn.toString().split("\\s+");
                 List<String> list = new ArrayList<>();
                 String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
-                list.add(0,fields[0]);
-                list.add(1,fields[1]);
-                list.add(2,fields[2]);
-                list.add(3,fields[3]);
-                list.add(4,fields[4]);
-                list.add(5,fields[5]);
-                list.add(6,fields[6]);
-                list.add(7,errorDescription);
-                list.add(8,"O");
-                result = InsertData(connection1, connection2, list, tableImport);
+                list.add(0, fields[0]);
+                list.add(1, fields[1]);
+                list.add(2, fields[2]);
+                list.add(3, fields[3]);
+                list.add(4, fields[4]);
+                list.add(5, fields[5]);
+                list.add(6, fields[6]);
+                list.add(7, errorDescription);
+                list.add(8, "O");
+                result = InsertData(connection1, connection2, list, tableImport, typeId);
             }
             reader.close();
             if (result) {
@@ -90,15 +90,16 @@ public class ImportEmailRapFile {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, int typeId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
 
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            String getDataImportConfig = "select * from email.rap_email_config_detail";
+            String getDataImportConfig = "select * from email.email_config_detail where type_id = ?";
             ps = connection1.prepareStatement(getDataImportConfig);
+            ps.setInt(1, typeId);
             rs = ps.executeQuery();
             List<Map<String, Object>> lstAll = new ArrayList<>();
             while (rs.next()) {
@@ -162,6 +163,7 @@ public class ImportEmailRapFile {
         }
         return result;
     }
+
     public static String formatDatetime(String dateTimeString) throws Exception {
         String formattedDateTime = "";
         try {

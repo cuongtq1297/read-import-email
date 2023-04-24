@@ -12,7 +12,7 @@ import java.sql.SQLException;
 public class CheckEmail {
     private static final Logger logger = LogManager.getLogger(CheckEmail.class);
 
-    public static boolean check(String senderMail, String receiverMail, String subject, String attachmentName) throws SQLException {
+    public static boolean check(String senderMail, String receiverMail, String subject, String receivedDate) throws SQLException {
         boolean result = false;
         Connection connection = null;
         PreparedStatement ps = null;
@@ -21,13 +21,13 @@ public class CheckEmail {
             connection = GetConnection.connect();
             connection.setAutoCommit(false);
             String checkSql = "select * from email.email_processing " +
-                    "where sender_mail = ? and receiver_mail = ? and subject = ? and attachment_name = ? and status = ?";
+                    "where sender_mail = ? and subject = ? and receiver_mail = ? and received_date = ? and status = ?";
             ps = connection.prepareStatement(checkSql);
             ps.setString(1,senderMail);
-            ps.setString(2,receiverMail);
-            ps.setString(3,subject);
-            ps.setString(4,attachmentName);
-            ps.setString(5,"0");
+            ps.setString(2,subject);
+            ps.setString(3,receiverMail);
+            ps.setString(4,receivedDate);
+            ps.setString(5,"success");
             rs = ps.executeQuery();
             if(!rs.next()){
                 result = true;

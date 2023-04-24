@@ -16,7 +16,7 @@ import java.util.*;
 public class ImportEmailHur {
     private static final Logger logger = LogManager.getLogger(ImportEmailHur.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, int typeId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         boolean result = false;
@@ -29,13 +29,13 @@ public class ImportEmailHur {
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("P")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    result = InsertData(connection1, connection2, fields, tableImport);
+                    result = InsertData(connection1, connection2, fields, tableImport, typeId);
                     if (!result) {
                         break;
                     }
                 } else if (line.startsWith("C")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    result = InsertData(connection1, connection2, fields, tableImport);
+                    result = InsertData(connection1, connection2, fields, tableImport, typeId);
                     if (!result) {
                         break;
                     }
@@ -55,15 +55,16 @@ public class ImportEmailHur {
     }
 
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, int typeId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select * from email.hur_email_config_detail";
+            String getDataImportConfig = "select * from email.email_config_detail where type_id = ?";
             ps = connection1.prepareStatement(getDataImportConfig);
+            ps.setInt(1, typeId);
             rs = ps.executeQuery();
             while (rs.next()) {
                 String type = rs.getString("type");

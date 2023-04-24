@@ -11,26 +11,53 @@ import java.sql.SQLException;
 public class InsertEmail {
     private static final Logger logger = LogManager.getLogger(InsertEmail.class);
 
-    public static void insertEmail(boolean result, String senderMail, String receiverMail, String subject, String attachmentName, String type) throws SQLException {
+    public static boolean insertEmailPending(String senderMail, String subject, String attachmentName, int typeId, String receiverMail, String receivedDate) throws SQLException {
+        boolean result = false;
+        int insert;
         Connection connection = null;
         PreparedStatement ps = null;
 
         try {
             connection = GetConnection.connect();
             connection.setAutoCommit(false);
-            String importSql = "INSERT INTO email.email_processing(sender_mail,receiver_mail,subject,attachment_name,type,status,create_at)\n" +
-                    "values (?,?,?,?,?,?,NOW())";
+            String importSql = "INSERT INTO email.email_processing(sender_mail,subject,attachment_name,type_id,status,receiver_mail,received_date,create_at)\n" +
+                    "values (?,?,?,?,?,?,?,NOW())";
             ps = connection.prepareStatement(importSql);
             ps.setString(1, senderMail);
-            ps.setString(2, receiverMail);
+            ps.setString(2, subject);
+            ps.setString(3, attachmentName);
+            ps.setInt(4, typeId);
+            ps.setString(5, "pending");
+            ps.setString(6, receiverMail);
+            ps.setString(7,receivedDate);
+            insert = ps.executeUpdate();
+            if(insert == 1){
+                result = true;
+            }
+            connection.commit();
+        } catch (Exception e) {
+            logger.error("insert pending email information fail" + e);
+        } finally {
+            connection.close();
+            ps.close();
+        }
+        return result;
+    }
+
+    public static void updateStatus(String senderMail, String subject, String attachmentName) throws SQLException {
+        Connection connection = null;
+        PreparedStatement ps = null;
+
+        try {
+            connection = GetConnection.connect();
+            connection.setAutoCommit(false);
+            String importSql = "UPDATE email.email_processing SET status = ? WHERE sender_mail = ? and subject = ? and attachment_name = ? ";
+            ps = connection.prepareStatement(importSql);
+            ps.setString(1, "success");
+            ps.setString(2, senderMail);
             ps.setString(3, subject);
             ps.setString(4, attachmentName);
-            ps.setString(5, type);
-            if (result) {
-                ps.setString(6, "0");
-            } else {
-                ps.setString(6, "1");
-            }
+
             ps.executeUpdate();
             connection.commit();
         } catch (Exception e) {
