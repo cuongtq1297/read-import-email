@@ -98,7 +98,7 @@ public class EmailProcess {
                 String subjectMail = message.getSubject();
                 // xử lý string người nhận
                 String receiverMail = "";
-                if (message.getAllRecipients()[0].toString().contains("<")){
+                if (message.getAllRecipients()[0].toString().contains("<")) {
                     int start = message.getAllRecipients()[0].toString().indexOf("<") + 1;
                     int end = message.getAllRecipients()[0].toString().indexOf(">");
                     receiverMail = message.getAllRecipients()[0].toString().substring(start, end);
@@ -114,10 +114,12 @@ public class EmailProcess {
                     if (message.getContent() instanceof Multipart) {
                         Multipart multipart = (Multipart) message.getContent();
                         // duyệt qua từng phần của multipart
+                        boolean hasAttachment = false;
                         for (int j = 0; j < multipart.getCount(); j++) {
                             BodyPart bodyPart = multipart.getBodyPart(j);
                             // kiểm tra phần có phải là file đính kèm được gửi từ email hay không
                             if (bodyPart.getDisposition() != null && bodyPart.getDisposition().equalsIgnoreCase("attachment")) {
+                                hasAttachment = true;
                                 // kiểm tra định dạng file
                                 String fileName = bodyPart.getFileName();
                                 List isHur = FilterEmail.Filter(senderMail, subjectMail, fileName, lstHurMailConfig);
@@ -156,10 +158,7 @@ public class EmailProcess {
                                     }
                                     ;
 //                                    targetFolder.appendMessages(new Message[]{message});
-
-                                }
-                                // email canh bao tap missing
-                                if (!isTap.isEmpty()) {
+                                } else if (!isTap.isEmpty()) { // email mcl
                                     String ipDb = (String) ((ArrayList) isTap.get(0)).get(7);
                                     String user = (String) ((ArrayList) isTap.get(0)).get(8);
                                     String password = (String) ((ArrayList) isTap.get(0)).get(9);
@@ -184,9 +183,7 @@ public class EmailProcess {
 //                                    targetFolder.appendMessages(new Message[]{message});
                                     }
 
-                                }
-                                // email canh bao rap file
-                                if (!isRap.isEmpty()) {
+                                } else if (!isRap.isEmpty()) { //email rap
                                     String ipDb = (String) ((ArrayList) isRap.get(0)).get(7);
                                     String user = (String) ((ArrayList) isRap.get(0)).get(8);
                                     String password = (String) ((ArrayList) isRap.get(0)).get(9);
@@ -210,10 +207,7 @@ public class EmailProcess {
                                         }
 //                                    targetFolder.appendMessages(new Message[]{message});
                                     }
-
-                                }
-                                // email canh bao dfd
-                                if (!isDfd.isEmpty()) {
+                                } else if (!isDfd.isEmpty()) { // email canh bao dfd
                                     String ipDb = (String) ((ArrayList) isDfd.get(0)).get(7);
                                     String user = (String) ((ArrayList) isDfd.get(0)).get(8);
                                     String password = (String) ((ArrayList) isDfd.get(0)).get(9);
@@ -231,17 +225,14 @@ public class EmailProcess {
                                     attachmentContent = stringBuilder.toString();
                                     boolean insertPending = InsertEmail.insertEmailPending(senderMail, subjectMail, fileName, typeId, receiverMail, receivedDate);
                                     if (insertPending) {
-                                        resultImport   = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                        resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
                                         if (resultImport) {
                                             InsertEmail.updateStatus(senderMail, message.getSubject(), fileName);
                                         }
 //                                    targetFolder.appendMessages(new Message[]{message});
                                     }
 
-                                }
-
-                                // email canh bao missing config
-                                if (!isMcl.isEmpty()) {
+                                } else if (!isMcl.isEmpty()) { // email canh bao missing config
                                     String ipDb = (String) ((ArrayList) isMcl.get(0)).get(7);
                                     String user = (String) ((ArrayList) isMcl.get(0)).get(8);
                                     String password = (String) ((ArrayList) isMcl.get(0)).get(9);
@@ -264,8 +255,13 @@ public class EmailProcess {
                                         }
 //                                    targetFolder.appendMessages(new Message[]{message});
                                     }
+                                } else {
+                                    InsertEmail.insertTypeNotDefineEmail(senderMail, subjectMail, fileName, 0, receiverMail, receivedDate);
                                 }
                             }
+                        }
+                        if (!hasAttachment) {
+                            InsertEmail.insertTypeNotDefineEmail(senderMail, subjectMail, null, 0, receiverMail, receivedDate);
                         }
                     }
                 }
