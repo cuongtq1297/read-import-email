@@ -87,7 +87,7 @@ public class EmailProcess {
 //            targetFolder.open(Folder.READ_WRITE);
             Message[] messages = folder.getMessages();
             Message[] failMessages = null;
-            System.out.println("Có " + messages.length + " thư từ trong INBOX");
+            System.out.println("Reading email ..... ");
             for (int i = 0; i < messages.length; i++) {
                 boolean checkEmail = false;
                 Message message = messages[i];
