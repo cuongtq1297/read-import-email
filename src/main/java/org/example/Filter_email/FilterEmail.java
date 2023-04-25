@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class FilterEmail {
-    public static List<Object> Filter(String senderMail, String subjectMail, String fileName, List<List<Object>> lstMailConfig) {
+    public static List<Object> Filter(String senderMail, String subjectMail, List<String> fileNames, List<List<Object>> lstMailConfig) {
         List<Object> listResult = new ArrayList<>();
         boolean checkSender = false;
         boolean checkSubject = false;
@@ -57,14 +57,22 @@ public class FilterEmail {
 
             // check attachmentName
             if (mailConfig.get(5).equals("exactly")) {
-                if (mailConfig.get(4).toString().contains(subjectMail)) {
-                    checkAttachmentName = true;
+                for (int i = 0; i < fileNames.size(); i++) {
+                    if (mailConfig.get(4).toString().contains(fileNames.get(i))) {
+                        checkAttachmentName = true;
+                    } else {
+                        checkAttachmentName = false;
+                        break;
+                    }
                 }
             } else if (mailConfig.get(5).equals("like")) {
                 String[] attachmentLst = mailConfig.get(4).toString().replace(" ", "").replace("[", "").replace("]", "").split(",");
                 for (String attachmentLike : attachmentLst) {
-                    if (fileName.contains(attachmentLike)) {
+                    if (fileNames.toString().contains(attachmentLike)) {
                         checkAttachmentName = true;
+                    } else {
+                        checkAttachmentName = false;
+                        break;
                     }
                 }
             } else if (mailConfig.get(5).equals("regex")) {
@@ -72,14 +80,23 @@ public class FilterEmail {
                 for (String attachmentMailRegex : attachmentLst) {
                     if (Pattern.matches(attachmentMailRegex, senderMail)) {
                         checkAttachmentName = true;
+                    } else {
+                        checkAttachmentName = false;
+                        break;
                     }
                 }
             }
 
             // check attachmentType
-            if (fileName.endsWith(mailConfig.get(6).toString())) {
-                checkAttachmentType = true;
+            for (String fileName : fileNames){
+                if (fileName.endsWith(mailConfig.get(6).toString())){
+                    checkAttachmentType = true;
+                } else {
+                    checkAttachmentType = false;
+                    break;
+                }
             }
+
             if (checkSender && checkSubject && checkAttachmentName && checkAttachmentType) {
                 listResult.add(0, mailConfig);
                 break;

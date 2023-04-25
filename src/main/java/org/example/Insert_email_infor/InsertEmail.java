@@ -44,7 +44,7 @@ public class InsertEmail {
         return result;
     }
 
-    public static void updateStatus(String senderMail, String subject, String attachmentName) throws SQLException {
+    public static void updateStatus(String senderMail, String subject, String attachmentNames) throws SQLException {
         Connection connection = null;
         PreparedStatement ps = null;
 
@@ -56,7 +56,7 @@ public class InsertEmail {
             ps.setString(1, "success");
             ps.setString(2, senderMail);
             ps.setString(3, subject);
-            ps.setString(4, attachmentName);
+            ps.setString(4, attachmentNames);
 
             ps.executeUpdate();
             connection.commit();
