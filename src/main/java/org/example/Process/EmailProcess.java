@@ -88,6 +88,7 @@ public class EmailProcess {
             Message[] messages = folder.getMessages();
             Message[] failMessages = null;
             System.out.println("Reading email ..... ");
+            System.out.println("có " + messages.length + " thư");
             for (int i = 0; i < messages.length; i++) {
                 boolean checkEmail = false;
                 Message message = messages[i];
