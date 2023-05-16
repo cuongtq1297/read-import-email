@@ -1,19 +1,40 @@
 package org.example.EmailObject;
 
+import java.util.List;
+
 public class EmailConfig {
     private Long emailConfigId;
-    private String typeName;
     private String partnerCode;
-    private String senderMail;
+    private String typeName;
+    private List<String> senderMail;
     private String senderSelector;
-    private String patternAttachment;
+    private List<String> subjectMail;
+    private String subjectSelector;
+    private List<String> patternAttachment;
     private String patternSelector;
     private String attachFileType;
-    private String mailSubject;
-    private String mailSubjectSelector;
     private String ipDb;
-    private String userPasswordDb;
+    private String username;
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     private String tns;
+    private String tableImport;
 
     public Long getEmailConfigId() {
         return emailConfigId;
@@ -21,14 +42,6 @@ public class EmailConfig {
 
     public void setEmailConfigId(Long emailConfigId) {
         this.emailConfigId = emailConfigId;
-    }
-
-    public String getTypeName() {
-        return typeName;
-    }
-
-    public void setTypeName(String typeName) {
-        this.typeName = typeName;
     }
 
     public String getPartnerCode() {
@@ -39,11 +52,19 @@ public class EmailConfig {
         this.partnerCode = partnerCode;
     }
 
-    public String getSenderMail() {
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
+
+    public List<String> getSenderMail() {
         return senderMail;
     }
 
-    public void setSenderMail(String senderMail) {
+    public void setSenderMail(List<String> senderMail) {
         this.senderMail = senderMail;
     }
 
@@ -55,12 +76,12 @@ public class EmailConfig {
         this.senderSelector = senderSelector;
     }
 
-    public String getPatternAttachment() {
-        return patternAttachment;
+    public String getSubjectSelector() {
+        return subjectSelector;
     }
 
-    public void setPatternAttachment(String patternAttachment) {
-        this.patternAttachment = patternAttachment;
+    public void setSubjectSelector(String subjectSelector) {
+        this.subjectSelector = subjectSelector;
     }
 
     public String getPatternSelector() {
@@ -79,22 +100,6 @@ public class EmailConfig {
         this.attachFileType = attachFileType;
     }
 
-    public String getMailSubject() {
-        return mailSubject;
-    }
-
-    public void setMailSubject(String mailSubject) {
-        this.mailSubject = mailSubject;
-    }
-
-    public String getMailSubjectSelector() {
-        return mailSubjectSelector;
-    }
-
-    public void setMailSubjectSelector(String mailSubjectSelector) {
-        this.mailSubjectSelector = mailSubjectSelector;
-    }
-
     public String getIpDb() {
         return ipDb;
     }
@@ -103,19 +108,35 @@ public class EmailConfig {
         this.ipDb = ipDb;
     }
 
-    public String getUserPasswordDb() {
-        return userPasswordDb;
-    }
-
-    public void setUserPasswordDb(String userPasswordDb) {
-        this.userPasswordDb = userPasswordDb;
-    }
-
     public String getTns() {
         return tns;
     }
 
     public void setTns(String tns) {
         this.tns = tns;
+    }
+
+    public String getTableImport() {
+        return tableImport;
+    }
+
+    public void setTableImport(String tableImport) {
+        this.tableImport = tableImport;
+    }
+
+    public List<String> getSubjectMail() {
+        return subjectMail;
+    }
+
+    public void setSubjectMail(List<String> subjectMail) {
+        this.subjectMail = subjectMail;
+    }
+
+    public List<String> getPatternAttachment() {
+        return patternAttachment;
+    }
+
+    public void setPatternAttachment(List<String> patternAttachment) {
+        this.patternAttachment = patternAttachment;
     }
 }

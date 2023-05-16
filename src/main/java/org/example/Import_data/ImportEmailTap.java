@@ -16,7 +16,7 @@ import java.util.*;
 public class ImportEmailTap {
     private static final Logger logger = LogManager.getLogger(ImportEmailTap.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, int typeId) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, Long emailConfigId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         BufferedReader reader = new BufferedReader(new StringReader(data));
@@ -112,7 +112,7 @@ public class ImportEmailTap {
                     list.add(7, action);
                     list.add(8, "");
                     list.add(9, "TAP OUT PENDING");
-                    result = InsertData(connection1, connection2, list, tableImport, typeId);
+                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
                     if (!result) {
                         run = false;
                         break;
@@ -164,7 +164,7 @@ public class ImportEmailTap {
                     list.add(7, action);
                     list.add(8, "");
                     list.add(9, "TAP OUT PENDING");
-                    result = InsertData(connection1, connection2, list, tableImport, typeId);
+                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
                     if (!result) {
                         break;
                     }
@@ -191,7 +191,7 @@ public class ImportEmailTap {
                     list.add(7, "");
                     list.add(8, informationTap);
                     list.add(9, "TAP IN MISSING");
-                    result = InsertData(connection1, connection2, list, tableImport, typeId);
+                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
                     if (!result) {
                         break;
                     }
@@ -218,7 +218,7 @@ public class ImportEmailTap {
                     list.add(7, "");
                     list.add(8, informationTap);
                     list.add(9, "TAP OUT MISSING");
-                    result = InsertData(connection1, connection2, list, tableImport, typeId);
+                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
                     if (!result) {
                         break;
                     }
@@ -238,15 +238,15 @@ public class ImportEmailTap {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, int typeId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where type_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
             ps = connection1.prepareStatement(getDataImportConfig);
-            ps.setInt(1, typeId);
+            ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
             List<Map<String, Object>> lstAll = new ArrayList<>();
             while (rs.next()) {

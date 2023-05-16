@@ -16,7 +16,7 @@ import java.util.*;
 public class ImportEmailRapFile {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, int typeId) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, Long emailConfigId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         Map<String, String> map = new HashMap<>();
@@ -59,7 +59,7 @@ public class ImportEmailRapFile {
                 list.add(6, fields[6]);
                 list.add(7, errorDescription);
                 list.add(8, "I");
-                result = InsertData(connection1, connection2, list, tableImport, typeId);
+                result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
             }
             if (!sbRapOut.toString().contains("No RAP OUT Files created")) {
                 result = false;
@@ -75,7 +75,7 @@ public class ImportEmailRapFile {
                 list.add(6, fields[6]);
                 list.add(7, errorDescription);
                 list.add(8, "O");
-                result = InsertData(connection1, connection2, list, tableImport, typeId);
+                result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
             }
             reader.close();
             if (result) {
@@ -90,16 +90,16 @@ public class ImportEmailRapFile {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, int typeId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
 
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where type_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
             ps = connection1.prepareStatement(getDataImportConfig);
-            ps.setInt(1, typeId);
+            ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
             List<Map<String, Object>> lstAll = new ArrayList<>();
             while (rs.next()) {

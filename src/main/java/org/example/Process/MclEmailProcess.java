@@ -10,7 +10,7 @@ import org.example.EmailObject.EmailAccount;
 import org.example.EmailObject.EmailConfig;
 import org.example.Filter_email.FilterEmail;
 import org.example.Get_config.GetEmailConfig;
-import org.example.Import_data.ImportEmailHur;
+import org.example.Import_data.ImportEmailMissingConfig;
 import org.example.Insert_email_infor.CheckEmail;
 import org.example.Insert_email_infor.InsertEmail;
 import org.example.TimeProcess.TimeProcess;
@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class HurEmailProcess {
-    private static final Logger logger = LogManager.getLogger(HurEmailProcess.class);
-    private static final String TYPE_NAME = "HUR";
+public class MclEmailProcess {
+    private static final Logger logger = LogManager.getLogger(MclEmailProcess.class);
+    private static final String TYPE_NAME = "MCL";
 
-    public static void HurEmailProcess() throws Exception {
+    public static void MclEmailProcess() throws Exception {
         try {
             // Lay account
             List<EmailAccount> accountList = GetEmailAccount.getAccount();
@@ -97,7 +97,7 @@ public class HurEmailProcess {
                                             stringBuilder.append(new String(buffer, 0, bufferSize));
                                         }
                                         attachmentContent = stringBuilder.toString();
-                                        boolean resultImport = ImportEmailHur.importData(attachmentContent, ipDb, user, password, tableImport, emailConfig.getEmailConfigId());
+                                        boolean resultImport = ImportEmailMissingConfig.importData(attachmentContent, ipDb, user, password, tableImport, emailConfig.getEmailConfigId());
                                         if (resultImport) {
                                             InsertEmail.updateStatusNew(messageId, "1");
                                         }
@@ -122,8 +122,8 @@ public class HurEmailProcess {
         boolean checkTime = TimeProcess.checkTimeProcess(TYPE_NAME);
         if (checkTime) {
             System.out.println("start");
-            logger.info("Tien trinh quet email hur bat dau");
-            HurEmailProcess();
+            logger.info("Tien trinh quet email mcl bat dau");
+            MclEmailProcess();
             logger.info("Tien trinh hoan thanh");
             System.out.println("end");
         } else {

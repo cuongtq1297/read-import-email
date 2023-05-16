@@ -10,7 +10,7 @@ import org.example.EmailObject.EmailAccount;
 import org.example.EmailObject.EmailConfig;
 import org.example.Filter_email.FilterEmail;
 import org.example.Get_config.GetEmailConfig;
-import org.example.Import_data.ImportEmailHur;
+import org.example.Import_data.ImportEmailRapFile;
 import org.example.Insert_email_infor.CheckEmail;
 import org.example.Insert_email_infor.InsertEmail;
 import org.example.TimeProcess.TimeProcess;
@@ -22,11 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class HurEmailProcess {
-    private static final Logger logger = LogManager.getLogger(HurEmailProcess.class);
-    private static final String TYPE_NAME = "HUR";
-
-    public static void HurEmailProcess() throws Exception {
+public class RapEmailProcess {
+    private static final Logger logger = LogManager.getLogger(RapEmailProcess.class);
+    private static final String TYPE_NAME = "RAP";
+    public static void RapEmailProcess() throws Exception {
         try {
             // Lay account
             List<EmailAccount> accountList = GetEmailAccount.getAccount();
@@ -41,7 +40,8 @@ public class HurEmailProcess {
                     // check da xu ly
                     checkRecord = CheckEmail.checkRecord(messageId);
                     isMulti = message.getContent() instanceof Multipart;
-                    if (checkRecord && isMulti) {
+                    System.out.println(message.getSubject());
+                    if (checkRecord && isMulti ) {
                         int startIdx = message.getFrom()[0].toString().indexOf("<") + 1;
                         int endIdx = message.getFrom()[0].toString().indexOf(">");
                         String senderMail = message.getFrom()[0].toString().substring(startIdx, endIdx);
@@ -97,7 +97,7 @@ public class HurEmailProcess {
                                             stringBuilder.append(new String(buffer, 0, bufferSize));
                                         }
                                         attachmentContent = stringBuilder.toString();
-                                        boolean resultImport = ImportEmailHur.importData(attachmentContent, ipDb, user, password, tableImport, emailConfig.getEmailConfigId());
+                                        boolean resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password, tableImport, emailConfig.getEmailConfigId());
                                         if (resultImport) {
                                             InsertEmail.updateStatusNew(messageId, "1");
                                         }
@@ -108,26 +108,27 @@ public class HurEmailProcess {
                                 }
                             }
                         } else {
-                            logger.info("email: Không phải email " + TYPE_NAME +"\n" + senderMail + subjectMail);
+                            logger.info("email: Không phải email tap" + "\n" + senderMail + subjectMail);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            logger.error("Error in process : " + e);
+            logger.error("Error in tap process : " + e);
         }
     }
 
     public static void main(String[] args) throws Exception {
         boolean checkTime = TimeProcess.checkTimeProcess(TYPE_NAME);
-        if (checkTime) {
+        if(checkTime){
             System.out.println("start");
-            logger.info("Tien trinh quet email hur bat dau");
-            HurEmailProcess();
+            logger.info("Tien trinh quet email rap bat dau");
+            RapEmailProcess();
             logger.info("Tien trinh hoan thanh");
             System.out.println("end");
         } else {
-            logger.info("Khong trong thoi gian chay tien trinh");
+            System.out.println("khong phai thoi gian");
+            logger.info("Khong trong thoi gian chay tien trinh tap");
         }
     }
 }

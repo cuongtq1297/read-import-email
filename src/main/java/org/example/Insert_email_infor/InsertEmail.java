@@ -11,6 +11,35 @@ import java.sql.SQLException;
 public class InsertEmail {
     private static final Logger logger = LogManager.getLogger(InsertEmail.class);
 
+    public static boolean insertPending(String senderMail, String subjectMail, String receiverMail, String attachment, Long emailConfigId, String typeName, String messageId) throws Exception {
+        boolean result = false;
+        int insert;
+        Connection connection = null;
+        PreparedStatement ps = null;
+        try {
+            connection = GetConnection.connect();
+            connection.setAutoCommit(false);
+            String sql = "insert into email.email_process_results (email_config_id, sender_mail, receiver_mail, subject_mail, attachment, type_name, message_id ,status ,create_at) " +
+                    "values(?,?,?,?,?,?,?,'0',NOW())";
+            ps = connection.prepareStatement(sql);
+            ps.setLong(1, emailConfigId);
+            ps.setString(2, senderMail);
+            ps.setString(3, receiverMail);
+            ps.setString(4, subjectMail);
+            ps.setString(5, attachment);
+            ps.setString(6, typeName);
+            ps.setString(7, messageId);
+            if (ps.executeUpdate() == 1) {
+                result = true;
+            }
+            connection.commit();
+        } catch (Exception e) {
+            logger.error("insert pending fail");
+        }
+        return result;
+    }
+
+
     public static boolean insertEmailPending(String senderMail, String subject, String attachmentName, int typeId, String receiverMail, String receivedDate) throws SQLException {
         boolean result = false;
         int insert;
@@ -68,6 +97,26 @@ public class InsertEmail {
         }
     }
 
+    public static void updateStatusNew(String messageId, String status) throws Exception {
+        Connection connection = null;
+        PreparedStatement ps = null;
+        try {
+            connection = GetConnection.connect();
+            connection.setAutoCommit(false);
+            String importSql = "UPDATE email.email_process_results SET status = ? WHERE message_id = ?  ";
+            ps = connection.prepareStatement(importSql);
+            ps.setString(1, status);
+            ps.setString(2, messageId);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (Exception e) {
+            logger.error("update fail" + e);
+        } finally {
+            connection.close();
+            ps.close();
+        }
+    }
+
     public static void insertTypeNotDefineEmail(String senderMail, String subject, String attachmentName, int typeId, String receiverMail, String receivedDate) throws Exception {
         Connection connection = null;
         PreparedStatement ps = null;
@@ -94,4 +143,28 @@ public class InsertEmail {
             ps.close();
         }
     }
+
+    public static void insertNotDefine(String senderMail, String subjectMail, String receiverMail, String attachment, Long emailConfigId, String typeName, String messageId) throws Exception {
+        boolean result = false;
+        Connection connection = null;
+        PreparedStatement ps = null;
+        try {
+            connection = GetConnection.connect();
+            connection.setAutoCommit(false);
+            String sql = "insert into email.email_process_results ( sender_mail, receiver_mail, subject_mail, attachment, type_name, message_id ,status ,create_at) " +
+                    "values(?,?,?,?,?,?,'2',NOW())";
+            ps = connection.prepareStatement(sql);
+            ps.setString(1, senderMail);
+            ps.setString(2, receiverMail);
+            ps.setString(3, subjectMail);
+            ps.setString(4, attachment);
+            ps.setString(5, typeName);
+            ps.setString(6, messageId);
+            ps.executeUpdate();
+            connection.commit();
+        } catch (Exception e) {
+            logger.error("insert fail");
+        }
+    }
+
 }

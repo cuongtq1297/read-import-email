@@ -1,17 +1,19 @@
 package org.example.Filter_email;
 
+import org.example.EmailObject.EmailConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class FilterEmail {
-    public static List<Object> Filter(String senderMail, String subjectMail, List<String> fileNames, List<List<Object>> lstMailConfig) {
-        List<Object> listResult = new ArrayList<>();
+    public static List<EmailConfig> Filter(String senderMail, String subjectMail, List<String> fileNames, List<List<EmailConfig>> lstMailConfig) {
+        List<EmailConfig> listResult = new ArrayList<>();
         boolean checkSender = false;
         boolean checkSubject = false;
         boolean checkAttachmentName = false;
         boolean checkAttachmentType = false;
-        for (List<Object> mailConfig : lstMailConfig) {
+        for (List<EmailConfig> mailConfig : lstMailConfig) {
 
             // check sender mail
             if (mailConfig.get(1).equals("exactly")) {
@@ -88,8 +90,8 @@ public class FilterEmail {
             }
 
             // check attachmentType
-            for (String fileName : fileNames){
-                if (fileName.endsWith(mailConfig.get(6).toString())){
+            for (String fileName : fileNames) {
+                if (fileName.endsWith(mailConfig.get(6).toString())) {
                     checkAttachmentType = true;
                 } else {
                     checkAttachmentType = false;
@@ -98,10 +100,94 @@ public class FilterEmail {
             }
 
             if (checkSender && checkSubject && checkAttachmentName && checkAttachmentType) {
-                listResult.add(0, mailConfig);
+                listResult.add(0, null);
                 break;
             }
         }
         return listResult;
+    }
+    public static EmailConfig checkSenderSubject(String senderMail, String subjectMail, List<EmailConfig> lst) {
+        EmailConfig emailConfigRs = new EmailConfig();
+        boolean checkSender = false;
+        boolean checkSubject = false;
+        for (EmailConfig emailConfig : lst) {
+            if (emailConfig.getSenderSelector().equals("exactly")) {
+                if (emailConfig.getSenderMail().contains(senderMail)) {
+                    checkSender = true;
+                }
+            } else if (emailConfig.getSenderSelector().equals("like")) {
+                for (int i = 0; i < emailConfig.getSenderMail().size(); i++) {
+                    if (senderMail.contains(emailConfig.getSenderMail().get(i))) {
+                        checkSender = true;
+                    }
+                }
+            } else if (emailConfig.getSenderSelector().equals("like")) {
+                for (int i = 0; i < emailConfig.getSenderMail().size(); i++) {
+                    if (Pattern.matches(emailConfig.getSenderMail().get(i), senderMail)) {
+                        checkSender = true;
+                    }
+                }
+            }
+            if (emailConfig.getSubjectSelector().equals("exactly")) {
+                if(emailConfig.getSubjectMail().contains(subjectMail)){
+                    checkSubject = true;
+                }
+            } else if (emailConfig.getSubjectSelector().equals("like")) {
+                for (int i = 0; i < emailConfig.getSubjectMail().size(); i++) {
+                    if (subjectMail.contains(emailConfig.getSubjectMail().get(i))) {
+                        checkSubject = true;
+                    }
+                }
+            } else if (emailConfig.getSubjectSelector().equals("regex")) {
+                for (int i = 0; i < emailConfig.getSubjectMail().size(); i++) {
+                    if (Pattern.matches(emailConfig.getSubjectMail().get(i), subjectMail)) {
+                        checkSubject = true;
+                    }
+                }
+            }
+            if (checkSender && checkSubject) {
+                emailConfigRs = emailConfig;
+                break;
+            }
+        }
+        return emailConfigRs;
+    }
+
+    public static boolean checkAttachment(List<String> attachment, EmailConfig emailConfig) {
+        boolean checkResult = false;
+        if (emailConfig.getPatternSelector().equals("exactly")) {
+            for (String att : attachment) {
+                if (emailConfig.getPatternAttachment().contains(att)) {
+                    checkResult = true;
+                } else {
+                    checkResult = false;
+                    break;
+                }
+            }
+        } else if (emailConfig.getPatternSelector().equals("like")) {
+            for (String att : attachment) {
+                for (int i = 0; i < emailConfig.getPatternAttachment().size(); i++) {
+                    if (att.contains(emailConfig.getPatternAttachment().get(i))) {
+                        checkResult = true;
+                    }
+                }
+                if (!checkResult) {
+                    break;
+                }
+            }
+        } else if (emailConfig.getPatternSelector().equals("regex")) {
+            for (String att : attachment) {
+                for (int i = 0; i < emailConfig.getPatternAttachment().size(); i++) {
+                    if (Pattern.matches(emailConfig.getPatternAttachment().get(i), att)) {
+                        checkResult = true;
+                    }
+                }
+                if (!checkResult) {
+                    break;
+                }
+            }
+        }
+
+        return checkResult;
     }
 }

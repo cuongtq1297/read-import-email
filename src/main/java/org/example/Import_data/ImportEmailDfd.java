@@ -16,7 +16,7 @@ import java.util.*;
 public class ImportEmailDfd {
     private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, int typeId) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, Long emailConfigId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
         boolean result = false;
@@ -69,7 +69,7 @@ public class ImportEmailDfd {
                     list.add(13, (String) line1.subSequence(125, 128));
                     list.add(14, (String) line1.subSequence(129, 132));
                     list.add(15, "");
-                    result1 = InsertData(connection1, connection2, list, tableImport, typeId);
+                    result1 = InsertData(connection1, connection2, list, tableImport, emailConfigId);
                     if (!result1) {
                         break;
                     }
@@ -96,7 +96,7 @@ public class ImportEmailDfd {
                     list.add(13, (String) line2.subSequence(125, 128));
                     list.add(14, (String) line2.subSequence(129, 132));
                     list.add(15, (String) line2.subSequence(0, 5));
-                    result2 = InsertData(connection1, connection2, list, tableImport, typeId);
+                    result2 = InsertData(connection1, connection2, list, tableImport, emailConfigId);
                     if (!result2) {
                         break;
                     }
@@ -118,16 +118,16 @@ public class ImportEmailDfd {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, int typeId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where type_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
             ps = connection1.prepareStatement(getDataImportConfig);
-            ps.setInt(1, typeId);
+            ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
             while (rs.next()) {
                 String type = rs.getString("type");

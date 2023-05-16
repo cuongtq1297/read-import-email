@@ -15,7 +15,7 @@ import java.util.*;
 public class ImportEmailMissingConfig {
     private static final Logger logger = LogManager.getLogger(ImportEmailMissingConfig.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, int typeId) throws Exception {
+    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         Connection connection2 = null;
         Connection connection1 = null;
@@ -28,7 +28,7 @@ public class ImportEmailMissingConfig {
             while ((line = reader.readLine()) != null) {
                 List<String> fields = Arrays.asList(line.split("\\s+"));
                 if (!fields.get(0).equals("Tapname")) {
-                    result = InsertData(connection1, connection2, fields, tableImport, typeId);
+                    result = InsertData(connection1, connection2, fields, tableImport, emailConfigId);
                     if (!result) {
                         break;
                     }
@@ -47,16 +47,16 @@ public class ImportEmailMissingConfig {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, int typeId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
         List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where type_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
             ps = connection1.prepareStatement(getDataImportConfig);
-            ps.setInt(1, typeId);
+            ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
             while (rs.next()) {
                 String type = rs.getString("type");

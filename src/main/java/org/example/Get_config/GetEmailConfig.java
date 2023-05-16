@@ -3,6 +3,7 @@ package org.example.Get_config;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.Database.GetConnection;
+import org.example.EmailObject.EmailConfig;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,7 +51,7 @@ public class GetEmailConfig {
 
                 String tableImport = rs.getString("table_import");
 
-                String[] UP = userPassword.split(",");
+                String[] UP = userPassword.split("/");
                 String user = UP[0];
                 String password = UP[1];
 
@@ -75,5 +76,56 @@ public class GetEmailConfig {
             logger.error("error get email config " + e);
         }
         return lstAll;
+    }
+
+    public static List<EmailConfig> getEmailConfigNew(String typeName) throws Exception {
+        List<EmailConfig> list = new ArrayList<>();
+        Connection connection = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            connection = GetConnection.connect();
+            String sql = "select * from email.email_config where type_name = ? and NOW() BETWEEN effect_date AND expire_date";
+            ps = connection.prepareStatement(sql);
+            ps.setString(1, typeName);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                String senderMailList = rs.getString("sender_mail");
+                List<String> lstSenderMail = Arrays.asList(senderMailList.split(";"));
+
+                String listSubject = rs.getString("subject_mail");
+                List<String> lstSubject = Arrays.asList(listSubject.split(";"));
+
+                String patternAttachment = rs.getString("pattern_attachment");
+                List<String> lstPatternAttachment = Arrays.asList(patternAttachment.split(";"));
+
+                String userPassword = rs.getString("user_password_db");
+
+                String[] UP = userPassword.split("/");
+                String user = UP[0];
+                String password = UP[1];
+
+                EmailConfig emailConfig = new EmailConfig();
+                emailConfig.setEmailConfigId(rs.getLong("email_config_id"));
+                emailConfig.setPartnerCode(rs.getString("partner_code"));
+                emailConfig.setTypeName(rs.getString("type_name"));
+                emailConfig.setSenderMail(lstSenderMail);
+                emailConfig.setSenderSelector(rs.getString("sender_selector"));
+                emailConfig.setSubjectMail(lstSubject);
+                emailConfig.setSubjectSelector(rs.getString("subject_selector"));
+                emailConfig.setAttachFileType(rs.getString("attach_file_type"));
+                emailConfig.setUsername(user);
+                emailConfig.setPassword(password);
+                emailConfig.setTableImport(rs.getString("table_import"));
+                emailConfig.setPatternAttachment(lstPatternAttachment);
+                emailConfig.setPatternSelector(rs.getString("pattern_selector"));
+                emailConfig.setIpDb(rs.getString("ip_db"));
+
+                list.add(emailConfig);
+            }
+        } catch (Exception e) {
+            logger.error("error get email config " + e);
+        }
+        return list;
     }
 }

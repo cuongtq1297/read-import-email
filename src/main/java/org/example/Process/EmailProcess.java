@@ -137,11 +137,11 @@ public class EmailProcess {
                             }
                         }
 
-                        List isHur = FilterEmail.Filter(senderMail, subjectMail, fileNames, lstHurMailConfig);
-                        List isTap = FilterEmail.Filter(senderMail, subjectMail, fileNames, lstTapMailConfig);
-                        List isRap = FilterEmail.Filter(senderMail, subjectMail, fileNames, lstRapMailConfig);
-                        List isDfd = FilterEmail.Filter(senderMail, subjectMail, fileNames, lstDfdMailConfig);
-                        List isMcl = FilterEmail.Filter(senderMail, subjectMail, fileNames, lstMclMailConfig);
+                        List isHur = FilterEmail.Filter(senderMail, subjectMail, fileNames, null);
+                        List isTap = FilterEmail.Filter(senderMail, subjectMail, fileNames, null);
+                        List isRap = FilterEmail.Filter(senderMail, subjectMail, fileNames, null);
+                        List isDfd = FilterEmail.Filter(senderMail, subjectMail, fileNames, null);
+                        List isMcl = FilterEmail.Filter(senderMail, subjectMail, fileNames, null);
                         if (!isHur.isEmpty()) {
                             String ipDb = (String) ((ArrayList) isHur.get(0)).get(7);
                             String user = (String) ((ArrayList) isHur.get(0)).get(8);
@@ -166,7 +166,7 @@ public class EmailProcess {
                                         DataHandler handler = bodyPart.getDataHandler();
                                         content = handler.getContent().toString();
                                     }
-                                    resultImport = ImportEmailHur.importData(content, ipDb, user, password, tableImport, typeId);
+                                    resultImport = ImportEmailHur.importData(content, ipDb, user, password, tableImport, null);
                                     if (!resultImport) {
                                         break;
                                     }
@@ -195,7 +195,7 @@ public class EmailProcess {
                                         stringBuilder.append(new String(buffer, 0, bufferSize));
                                     }
                                     attachmentContent = stringBuilder.toString();
-                                    resultImport = ImportEmailTap.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                    resultImport = ImportEmailTap.importData(attachmentContent, ipDb, user, password, tableImport, null);
                                     if (!resultImport) {
                                         break;
                                     }
@@ -224,7 +224,7 @@ public class EmailProcess {
                                         stringBuilder.append(new String(buffer, 0, bufferSize));
                                     }
                                     attachmentContent = stringBuilder.toString();
-                                    resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                    resultImport = ImportEmailRapFile.importData(attachmentContent, ipDb, user, password, tableImport, null);
                                     if (!resultImport) {
                                         break;
                                     }
@@ -253,7 +253,7 @@ public class EmailProcess {
                                         stringBuilder.append(new String(buffer, 0, bufferSize));
                                     }
                                     attachmentContent = stringBuilder.toString();
-                                    resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport, typeId);
+                                    resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport, null);
                                     if (!resultImport) {
                                         break;
                                     }
@@ -280,7 +280,7 @@ public class EmailProcess {
                                         output.write(buffer, 0, n);
                                     }
                                     xlsContent = output.toString();
-                                    resultImport = ImportEmailMissingConfig.importData(xlsContent, ipDb, user, password, tableImport, typeId);
+                                    resultImport = ImportEmailMissingConfig.importData(xlsContent, ipDb, user, password, tableImport, null);
                                     if (!resultImport) {
                                         break;
                                     }
