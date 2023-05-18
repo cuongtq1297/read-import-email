@@ -99,11 +99,6 @@ public class GetEmailConfig {
                 String patternAttachment = rs.getString("pattern_attachment");
                 List<String> lstPatternAttachment = Arrays.asList(patternAttachment.split(";"));
 
-                String userPassword = rs.getString("user_password_db");
-
-                String[] UP = userPassword.split("/");
-                String user = UP[0];
-                String password = UP[1];
 
                 EmailConfig emailConfig = new EmailConfig();
                 emailConfig.setEmailConfigId(rs.getLong("email_config_id"));
@@ -114,12 +109,12 @@ public class GetEmailConfig {
                 emailConfig.setSubjectMail(lstSubject);
                 emailConfig.setSubjectSelector(rs.getString("subject_selector"));
                 emailConfig.setAttachFileType(rs.getString("attach_file_type"));
-                emailConfig.setUsername(user);
-                emailConfig.setPassword(password);
+                emailConfig.setUsername(rs.getString("username"));
+                emailConfig.setPassword(rs.getString("password"));
                 emailConfig.setTableImport(rs.getString("table_import"));
                 emailConfig.setPatternAttachment(lstPatternAttachment);
                 emailConfig.setPatternSelector(rs.getString("pattern_selector"));
-                emailConfig.setIpDb(rs.getString("ip_db"));
+                emailConfig.setIpDb(rs.getString("tns"));
 
                 list.add(emailConfig);
             }

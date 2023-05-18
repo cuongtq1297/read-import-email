@@ -30,7 +30,7 @@ public class DfdEmailProcess {
             // Lay account
             List<EmailAccount> accountList = GetEmailAccount.getAccount();
             for (EmailAccount account : accountList) {
-                Message[] messages = GetMessage.getMessageFromInboxFolder(account.getUserName(), account.getPassword());
+                Message[] messages = GetMessage.getMessageFromInboxFolder(account.getUserName(), account.getPassword(), account.getHost(), account.getPort());
                 System.out.println("co " + messages.length + " thu");
                 for (int i = 0; i < messages.length; i++) {
                     boolean checkRecord = false;
@@ -107,7 +107,7 @@ public class DfdEmailProcess {
                                 }
                             }
                         } else {
-                            logger.info("email: Không phải email " + TYPE_NAME +"\n" + senderMail + subjectMail);
+                            logger.info("email: Không phải email " + TYPE_NAME + "\n" + senderMail + subjectMail);
                         }
                     }
                 }

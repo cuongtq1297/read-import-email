@@ -3,7 +3,8 @@ package org.example.EmailObject;
 public class EmailAccount {
     private String userName;
     private String password;
-
+    private String host;
+    private int port;
     public String getUserName() {
         return userName;
     }
@@ -20,4 +21,19 @@ public class EmailAccount {
         this.password = password;
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
 }

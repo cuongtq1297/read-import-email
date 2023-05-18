@@ -27,8 +27,12 @@ public class GetEmailAccount {
                 EmailAccount emailAccount = new EmailAccount();
                 String username = rs.getString("username");
                 String password = rs.getString("password");
+                String host = rs.getString("host");
+                int port = rs.getInt("port");
                 emailAccount.setUserName(username);
                 emailAccount.setPassword(password);
+                emailAccount.setHost(host);
+                emailAccount.setPort(port);
                 lstAccount.add(emailAccount);
             }
         } catch (Exception ex){
