@@ -27,6 +27,7 @@ import java.util.List;
 public class RapEmailProcess {
     private static final Logger logger = LogManager.getLogger(RapEmailProcess.class);
     private static final String TYPE_NAME = "RAP";
+
     public static void RapEmailProcess() throws Exception {
         try {
             // Lay account
@@ -42,7 +43,7 @@ public class RapEmailProcess {
                     // check da xu ly
                     checkRecord = CheckEmail.checkRecord(messageId);
                     isMulti = message.getContent() instanceof Multipart;
-                    if (checkRecord && isMulti ) {
+                    if (checkRecord && isMulti) {
                         int startIdx = message.getFrom()[0].toString().indexOf("<") + 1;
                         int endIdx = message.getFrom()[0].toString().indexOf(">");
                         String senderMail = message.getFrom()[0].toString().substring(startIdx, endIdx);
@@ -76,7 +77,7 @@ public class RapEmailProcess {
                         }
                         List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
                         EmailConfig emailConfig = FilterEmail.checkSenderSubject(senderMail, subjectMail, lstEmailConfig);
-                        String fileEmlName = account.getAccountId() + "-" + messageId;
+                        String fileEmlName = account.getAccountId() + "-" + messageId + ".eml";
                         File file = new File(fileEmlName);
                         FileOutputStream output = new FileOutputStream(file);
                         message.writeTo(output);
@@ -125,7 +126,7 @@ public class RapEmailProcess {
 
     public static void main(String[] args) throws Exception {
         boolean checkTime = TimeProcess.checkTimeProcess(TYPE_NAME);
-        if(checkTime){
+        if (checkTime) {
             System.out.println("start");
             logger.info("Tien trinh quet email rap bat dau");
             RapEmailProcess();

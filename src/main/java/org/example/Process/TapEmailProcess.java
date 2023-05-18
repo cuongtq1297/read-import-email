@@ -76,7 +76,7 @@ public class TapEmailProcess {
                         }
                         List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
                         EmailConfig emailConfig = FilterEmail.checkSenderSubject(senderMail, subjectMail, lstEmailConfig);
-                        String fileEmlName = account.getAccountId() + "-" + messageId;
+                        String fileEmlName = account.getAccountId() + "-" + messageId+ ".eml";
                         File file = new File(fileEmlName);
                         FileOutputStream output = new FileOutputStream(file);
                         message.writeTo(output);

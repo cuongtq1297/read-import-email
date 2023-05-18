@@ -76,7 +76,7 @@ public class DfdEmailProcess {
                         }
                         List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
                         EmailConfig emailConfig = FilterEmail.checkSenderSubject(senderMail, subjectMail, lstEmailConfig);
-                        String fileEmlName = account.getAccountId() + "-" + messageId;
+                        String fileEmlName = account.getAccountId() + "-" + messageId + ".eml";
 
                         if (emailConfig.getEmailConfigId() != null) {
                             // insert pending
