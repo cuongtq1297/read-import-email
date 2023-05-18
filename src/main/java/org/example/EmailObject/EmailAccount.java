@@ -1,6 +1,7 @@
 package org.example.EmailObject;
 
 public class EmailAccount {
+    private Long accountId;
     private String userName;
     private String password;
     private String host;
@@ -35,5 +36,13 @@ public class EmailAccount {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 }

@@ -18,6 +18,8 @@ import org.example.TimeProcess.TimeProcess;
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.Multipart;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +42,6 @@ public class RapEmailProcess {
                     // check da xu ly
                     checkRecord = CheckEmail.checkRecord(messageId);
                     isMulti = message.getContent() instanceof Multipart;
-                    System.out.println(message.getSubject());
                     if (checkRecord && isMulti ) {
                         int startIdx = message.getFrom()[0].toString().indexOf("<") + 1;
                         int endIdx = message.getFrom()[0].toString().indexOf(">");
@@ -75,11 +76,15 @@ public class RapEmailProcess {
                         }
                         List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
                         EmailConfig emailConfig = FilterEmail.checkSenderSubject(senderMail, subjectMail, lstEmailConfig);
-
+                        String fileEmlName = account.getAccountId() + "-" + messageId;
+                        File file = new File(fileEmlName);
+                        FileOutputStream output = new FileOutputStream(file);
+                        message.writeTo(output);
+                        output.close();
 
                         if (emailConfig.getEmailConfigId() != null) {
                             // insert pending
-                            boolean insertPending = InsertEmail.insertPending(senderMail, subjectMail, receiverMail, fileNameLst, emailConfig.getEmailConfigId(), TYPE_NAME, messageId);
+                            boolean insertPending = InsertEmail.insertPending(senderMail, subjectMail, receiverMail, fileNameLst, emailConfig.getEmailConfigId(), TYPE_NAME, messageId, fileEmlName);
                             if (insertPending) {
                                 boolean checkAttachment = FilterEmail.checkAttachment(fileNames, emailConfig);
                                 if (checkAttachment) {

@@ -4,6 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.Database.GetConnection;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -11,16 +13,18 @@ import java.sql.SQLException;
 public class InsertEmail {
     private static final Logger logger = LogManager.getLogger(InsertEmail.class);
 
-    public static boolean insertPending(String senderMail, String subjectMail, String receiverMail, String attachment, Long emailConfigId, String typeName, String messageId) throws Exception {
+    public static boolean insertPending(String senderMail, String subjectMail, String receiverMail, String attachment, Long emailConfigId, String typeName, String messageId,String fileEml) throws Exception {
         boolean result = false;
         int insert;
         Connection connection = null;
         PreparedStatement ps = null;
+        File emlFile = new File(fileEml);
         try {
+            FileInputStream fis = new FileInputStream(fileEml);
             connection = GetConnection.connect();
             connection.setAutoCommit(false);
-            String sql = "insert into email.email_process_results (email_config_id, sender_mail, receiver_mail, subject_mail, attachment, type_name, message_id ,status ,create_at) " +
-                    "values(?,?,?,?,?,?,?,'0',NOW())";
+            String sql = "insert into email.email_process_results (email_config_id, sender_mail, receiver_mail, subject_mail, attachment, type_name, message_id ,status ,create_at, email_data) " +
+                    "values(?,?,?,?,?,?,?,'0',NOW(),?)";
             ps = connection.prepareStatement(sql);
             ps.setLong(1, emailConfigId);
             ps.setString(2, senderMail);
@@ -29,6 +33,7 @@ public class InsertEmail {
             ps.setString(5, attachment);
             ps.setString(6, typeName);
             ps.setString(7, messageId);
+            ps.setBinaryStream(8, fis, emlFile.length());
             if (ps.executeUpdate() == 1) {
                 result = true;
             }

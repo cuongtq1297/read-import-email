@@ -25,6 +25,7 @@ public class GetEmailAccount {
             rs = ps.executeQuery();
             while (rs.next()){
                 EmailAccount emailAccount = new EmailAccount();
+                Long accountId = rs.getLong("email_account_id");
                 String username = rs.getString("username");
                 String password = rs.getString("password");
                 String host = rs.getString("host");
@@ -33,6 +34,7 @@ public class GetEmailAccount {
                 emailAccount.setPassword(password);
                 emailAccount.setHost(host);
                 emailAccount.setPort(port);
+                emailAccount.setAccountId(accountId);
                 lstAccount.add(emailAccount);
             }
         } catch (Exception ex){

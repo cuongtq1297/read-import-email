@@ -7,9 +7,6 @@ public class GetMessage {
     public static Message[] getMessageFromInboxFolder(String username, String password, String host, int port) throws Exception {
         Message[] messages = null;
         try {
-//            // Server mail POP3
-//            String host = "pop.gmail.com";
-//            int port = 995;
 
             Properties properties = new Properties();
             properties.put("mail.store.protocol", "pop3");
