@@ -19,7 +19,6 @@ public class ImportEmailRapFile {
     public static boolean importData(String data, String ipDb, String user, String password, String tableImport, Long emailConfigId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
-        Map<String, String> map = new HashMap<>();
         boolean result = false;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         boolean isRapIn = false;
@@ -29,7 +28,7 @@ public class ImportEmailRapFile {
         StringBuilder sbRapOut = new StringBuilder();
         try {
             connection1 = GetConnection.connect();
-            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+            connection2 = GetConnectionToImport.connectNew("RAP");
             connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
                 if (line.contains("Received")) {
@@ -97,7 +96,7 @@ public class ImportEmailRapFile {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ? ";
             ps = connection1.prepareStatement(getDataImportConfig);
             ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();

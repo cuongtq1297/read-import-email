@@ -32,7 +32,8 @@ public class ImportEmailDfd {
         StringBuilder sb1 = new StringBuilder();
         try {
             connection1 = GetConnection.connect();
-            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+//            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+            connection2 = GetConnectionToImport.connectNew("DFD");
             connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
                 if (line.contains("HPMN") && line.contains("Seqnr")) {
@@ -125,7 +126,7 @@ public class ImportEmailDfd {
         ResultSet rs = null;
         List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ? ";
             ps = connection1.prepareStatement(getDataImportConfig);
             ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();

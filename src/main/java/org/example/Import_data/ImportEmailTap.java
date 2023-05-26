@@ -33,7 +33,7 @@ public class ImportEmailTap {
         String line;
         try {
             connection1 = GetConnection.connect();
-            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+            connection2 = GetConnectionToImport.connectNew("TAP");
             connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
                 if (line.contains("TAP IN pending:")) {

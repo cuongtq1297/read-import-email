@@ -24,7 +24,7 @@ public class ImportEmailHur {
         String line;
         try {
             connection1 = GetConnection.connect();
-            connection2 = GetConnectionToImport.connect(ipDb, user, password);
+            connection2 = GetConnectionToImport.connectNew("HUR");
             connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("P")) {
@@ -62,7 +62,7 @@ public class ImportEmailHur {
         ResultSet rs = null;
         List<Map<String, Object>> lstAll = new ArrayList<>();
         try {
-            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ? ";
             ps = connection1.prepareStatement(getDataImportConfig);
             ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
