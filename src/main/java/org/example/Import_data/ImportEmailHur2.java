@@ -13,8 +13,8 @@ import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class ImportEmailDfd {
-    private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
+public class ImportEmailHur2 {
+    private static final Logger logger = LogManager.getLogger(ImportEmailHur2.class);
 
     public static boolean importData(String data, Long emailConfigId) throws Exception {
         Connection connection1 = null;
@@ -23,65 +23,24 @@ public class ImportEmailDfd {
         Connection connection2 = null;
         boolean result = false;
         BufferedReader reader = new BufferedReader(new StringReader(data));
-        boolean isHpmn = false;
-        String line = "";
-        String line1 = "";
-        StringBuilder sb = new StringBuilder();
+        String line;
         try {
             String tableImport = "";
             connection1 = GetConnection.connect();
-            String sql = "select * from email.email_database_connection where type_name = 'DFD'";
+            String sql = "select * from email.email_database_connection where type_name = 'HUR2'";
             stmt = connection1.prepareStatement(sql);
-
             rs = stmt.executeQuery();
             if (rs.next()) {
                 tableImport = rs.getString("table_import");
             } else {
                 return false;
             }
-            String vpmn = "";
-            connection2 = GetConnectionToImport.connectNew("DFD");
+            connection2 = GetConnectionToImport.connectNew("HUR2");
             connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
-                if (line.contains("Customer")) {
-                    String[] parts = line.split(" ");
-                    for (int i = 0; i < parts.length; i++) {
-                        if (parts[i].contains("Customer:")) {
-                            vpmn = parts[i + 1];
-                            break;
-                        }
-                    }
-                }
-                if (line.contains("HPMN") && line.contains("Seqnr")) {
-                    isHpmn = true;
-                } else if (line.contains("Total number of VPMN") && isHpmn) {
-                    isHpmn = false;
-                    break;
-                } else if (isHpmn) {
-                    sb.append(line.trim() + "\n");
-                }
-            }
-            BufferedReader reader1 = new BufferedReader(new StringReader(sb.toString().trim()));
-            while ((line1 = reader1.readLine()) != null) {
-                if (!line1.matches("[\\s-]+")) {
-                    List<String> list = new ArrayList<>();
-                    list.add(0, vpmn);
-                    list.add(1, (String) line1.subSequence(0, 5));
-                    list.add(2, (String) line1.subSequence(6, 11));
-                    list.add(3, (String) line1.subSequence(12, 27));
-                    list.add(4, (String) line1.subSequence(28, 43));
-                    list.add(5, (String) line1.subSequence(44, 51));
-                    list.add(6, (String) line1.subSequence(52, 55));
-                    list.add(7, (String) line1.subSequence(56, 66));
-                    list.add(8, (String) line1.subSequence(67, 70));
-                    list.add(9, (String) line1.subSequence(71, 86));
-                    list.add(10, (String) line1.subSequence(87, 102));
-                    list.add(11, (String) line1.subSequence(103, 104));
-                    list.add(12, (String) line1.subSequence(105, 120));
-                    list.add(13, (String) line1.subSequence(121, 124));
-                    list.add(14, (String) line1.subSequence(125, 128));
-                    list.add(15, (String) line1.subSequence(129, 132));
-                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
+                if (line.startsWith("C")) {
+                    List<String> fields = Arrays.asList(line.split(","));
+                    result = InsertData(connection1, connection2, fields, tableImport, emailConfigId);
                     if (!result) {
                         break;
                     }
@@ -90,7 +49,7 @@ public class ImportEmailDfd {
             if (result) {
                 connection2.commit();
             }
-            reader.close();
+
         } catch (Exception e) {
             logger.error("import data fail" + e);
         } finally {
@@ -100,64 +59,95 @@ public class ImportEmailDfd {
         return result;
     }
 
+
     public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        List<Map<String, Object>> lstAll = new ArrayList<>();
+        List<Map<String, String>> lstAll = new ArrayList<>();
         List<Map<String, String>> lstCheckExist = new ArrayList<>();
-        // todo: - lấy các trường require. check các trường require có null không nếu null thì không insert
-        // todo: - nếu không null tiến hành check tồn tại trong db, chưa tồn tại thì insert
         try {
             String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ? ";
             ps = connection1.prepareStatement(getDataImportConfig);
             ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
             while (rs.next()) {
-                String require = rs.getString("require");
-                String seq = rs.getString("seq_in_file");
-                int seqInt = Integer.parseInt(seq);
                 String type = rs.getString("type");
                 String columnImport = rs.getString("column_import");
-                String value = fields.get(seqInt);
-                if (require.equals("1")) {
-                    if (value == null || value.equals("")) {
-                        return false;
-                    } else {
-                        if (type.equals("text")) {
+                String require = rs.getString("require");
+                if (type.equals("text")) {
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq) - 1;
+                    if (require.equals("1")) {
+                        if (fields.get(seqInt) == null || fields.get(seqInt).equals("")) {
+                            return false;
+                        } else {
                             Map<String, String> map = new HashMap<>();
                             map.put("column_import", columnImport);
-                            map.put("value", value);
-                            lstCheckExist.add(map);
-                        } else if (type.equals("datetime")) {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("column_import", columnImport);
-                            map.put("value", formatDatetime(value));
-                            lstCheckExist.add(map);
-                        } else if (type.equals("number")) {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("column_import", columnImport);
-                            map.put("value", value);
+                            map.put("value", fields.get(seqInt));
                             lstCheckExist.add(map);
                         }
                     }
-                }
-                if (type.equals("text")) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("column_import", columnImport);
-                    map.put("value", value);
-                    lstAll.add(map);
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
+                    }
                 } else if (type.equals("datetime")) {
-                    Map<String, Object> map = new HashMap<>();
+                    String seqInFile = rs.getString("seq_in_file");
+                    String[] seqInFileLst = seqInFile.split(";");
+                    String dateTime = "";
+                    for (String seq : seqInFileLst) {
+                        int seqInt = Integer.parseInt(seq) - 1;
+                        if (!fields.get(seqInt).isBlank()) {
+                            dateTime += fields.get(seqInt);
+                        }
+                    }
+                    if (require.equals("1")) {
+                        if (dateTime.equals("")) {
+                            return false;
+                        } else {
+                            Map<String, String> map = new HashMap<>();
+                            map.put("column_import", columnImport);
+                            if (dateTime.length() == 8) {
+                                map.put("value", formatDatetime2(dateTime));
+                            }
+                            if (dateTime.length() > 8) {
+                                map.put("value", formatDatetime(dateTime));
+                            }
+                            lstCheckExist.add(map);
+                        }
+                    }
+                    Map<String, String> map = new HashMap<>();
                     map.put("column_import", columnImport);
-                    map.put("value", formatDatetime(value));
+                    if (dateTime.length() == 8) {
+                        map.put("value", formatDatetime2(dateTime));
+                    }
+                    if (dateTime.length() > 8) {
+                        map.put("value", formatDatetime(dateTime));
+                    }
                     lstAll.add(map);
                 } else if (type.equals("number")) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("column_import", columnImport);
-                    map.put("value", value);
-                    lstAll.add(map);
+                    String seq = rs.getString("seq_in_file");
+                    int seqInt = Integer.parseInt(seq) - 1;
+                    if (require.equals("1")) {
+                        if (fields.get(seqInt) == null || fields.get(seqInt).equals("")) {
+                            return false;
+                        } else {
+                            Map<String, String> map = new HashMap<>();
+                            map.put("column_import", columnImport);
+                            map.put("value", fields.get(seqInt));
+                            lstCheckExist.add(map);
+                        }
+                    }
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", fields.get(seqInt));
+                        lstAll.add(map);
+                    }
                 }
             }
             StringBuilder queryBuilder = new StringBuilder("SELECT 1 FROM ");
@@ -204,8 +194,8 @@ public class ImportEmailDfd {
         } catch (Exception e) {
             logger.error(e);
         } finally {
-            rs.close();
             ps.close();
+            rs.close();
         }
         return result;
     }
@@ -213,10 +203,22 @@ public class ImportEmailDfd {
     public static String formatDatetime(String dateTimeString) throws Exception {
         String formattedDateTime = "";
         try {
-            SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yy HH:mm");
-            Date date = formatter.parse(dateTimeString);
-            SimpleDateFormat newFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            formattedDateTime = newFormatter.format(date);
+            SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+            SimpleDateFormat outputFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date dateTime = inputFormatter.parse(dateTimeString);
+            formattedDateTime = outputFormatter.format(dateTime);
+        } catch (Exception e) {
+            logger.error(e);
+        }
+        return formattedDateTime;
+    }
+    public static String formatDatetime2(String dateTimeString) throws Exception {
+        String formattedDateTime = "";
+        try {
+            SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyyMMdd");
+            SimpleDateFormat outputFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date dateTime = inputFormatter.parse(dateTimeString);
+            formattedDateTime = outputFormatter.format(dateTime);
         } catch (Exception e) {
             logger.error(e);
         }

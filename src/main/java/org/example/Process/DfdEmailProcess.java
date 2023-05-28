@@ -5,6 +5,7 @@ import com.sun.mail.util.BASE64DecoderStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.CreateSessionMail.GetMessage;
+import org.example.Database.GetConnection;
 import org.example.EmailAccount.GetEmailAccount;
 import org.example.EmailObject.EmailAccount;
 import org.example.EmailObject.EmailConfig;
@@ -20,8 +21,10 @@ import javax.mail.Message;
 import javax.mail.Multipart;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.*;
 
 public class DfdEmailProcess {
     private static final Logger logger = LogManager.getLogger(DfdEmailProcess.class);
@@ -29,8 +32,10 @@ public class DfdEmailProcess {
 
     public static void DfdEmailProcess() throws Exception {
         try {
-            // Lay account
+            // Lay danh sach account tu database
             List<EmailAccount> accountList = GetEmailAccount.getAccount();
+            // Lay danh sach config
+            List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
             for (EmailAccount account : accountList) {
                 Message[] messages = GetMessage.getMessageFromInboxFolder(account.getUserName(), account.getPassword(), account.getHost(), account.getPort());
                 System.out.println("co " + messages.length + " thu");
@@ -74,7 +79,6 @@ public class DfdEmailProcess {
                                 fileNameLst += ";";
                             }
                         }
-                        List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
                         EmailConfig emailConfig = FilterEmail.checkSenderSubject(senderMail, subjectMail, lstEmailConfig);
                         String fileEmlName = account.getAccountId() + "-" + messageId + ".eml";
 
@@ -88,10 +92,6 @@ public class DfdEmailProcess {
                             if (insertPending) {
                                 boolean checkAttachment = FilterEmail.checkAttachment(fileNames, emailConfig);
                                 if (checkAttachment) {
-                                    String ipDb = emailConfig.getIpDb();
-                                    String user = emailConfig.getUsername();
-                                    String password = emailConfig.getPassword();
-                                    String tableImport = emailConfig.getTableImport();
                                     for (BodyPart bodyPart : bodyParts) {
                                         String attachmentContent = "";
                                         BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -102,7 +102,7 @@ public class DfdEmailProcess {
                                             stringBuilder.append(new String(buffer, 0, bufferSize));
                                         }
                                         attachmentContent = stringBuilder.toString();
-                                        boolean resultImport = ImportEmailDfd.importData(attachmentContent, ipDb, user, password, tableImport, emailConfig.getEmailConfigId());
+                                        boolean resultImport = ImportEmailDfd.importData(attachmentContent,  emailConfig.getEmailConfigId());
                                         if (resultImport) {
                                             InsertEmail.updateStatusNew(messageId, "1");
                                         }
@@ -123,16 +123,39 @@ public class DfdEmailProcess {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        boolean checkTime = TimeProcess.checkTimeProcess(TYPE_NAME);
-        if (checkTime) {
-            System.out.println("start");
-            logger.info("Tien trinh quet email dfd bat dau");
-            DfdEmailProcess();
-            logger.info("Tien trinh hoan thanh");
-            System.out.println("end");
-        } else {
-            logger.info("Khong trong thoi gian chay tien trinh");
+    static class MyTask extends TimerTask {
+        public void run() {
+            try {
+                DfdEmailProcess();
+            } catch (Exception e) {
+                logger.error(e.getMessage() + e);
+            }
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Connection connection = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        String timeConfig = "";
+        try {
+            connection = GetConnection.connect();
+            String sql = "Select time_config from email.email_database_connection where type_name = ?";
+            stmt = connection.prepareStatement(sql);
+            stmt.setString(1, TYPE_NAME);
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                timeConfig = rs.getString("time_config");
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage() + e);
+        }
+        String[] time = timeConfig.split(":");
+        int h = Integer.parseInt(time[0]);
+        int m = Integer.parseInt(time[1]);
+        int s = Integer.parseInt(time[2]);
+        Timer timer = new Timer();
+        // Chay theo thoi gian cau hinh bao nhieu phut chay lai
+        timer.schedule(new DfdEmailProcess.MyTask(), 0, h * 36000000 + m * 60000 + s * 1000);
     }
 }

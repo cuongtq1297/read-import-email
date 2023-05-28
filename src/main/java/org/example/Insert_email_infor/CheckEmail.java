@@ -41,6 +41,33 @@ public class CheckEmail {
         }
         return result;
     }
+    public static boolean checkNew(String messageId) throws Exception{
+        boolean result = false;
+        Connection connection = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            connection = GetConnection.connect();
+            connection.setAutoCommit(false);
+            String checkSql = "select * from email.email_processing " +
+                    "where message_id = ? and status != ?";
+            ps = connection.prepareStatement(checkSql);
+            ps.setString(1,messageId);
+            ps.setString(2,"0");
+
+            rs = ps.executeQuery();
+            if(!rs.next()){
+                result = true;
+            }
+        } catch (Exception e){
+            logger.error("insert email information fail" + e);
+        } finally {
+            connection.close();
+            ps.close();
+            rs.close();
+        }
+        return result;
+    }
     public static boolean checkRecord(String messageId) throws Exception{
         boolean result = false;
         Connection connection = null;

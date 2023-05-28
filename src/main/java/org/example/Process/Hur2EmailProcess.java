@@ -11,10 +11,9 @@ import org.example.EmailObject.EmailAccount;
 import org.example.EmailObject.EmailConfig;
 import org.example.Filter_email.FilterEmail;
 import org.example.Get_config.GetEmailConfig;
-import org.example.Import_data.ImportEmailRapFile;
+import org.example.Import_data.ImportEmailHur2;
 import org.example.Insert_email_infor.CheckEmail;
 import org.example.Insert_email_infor.InsertEmail;
-import org.example.TimeProcess.TimeProcess;
 
 import javax.mail.BodyPart;
 import javax.mail.Message;
@@ -29,16 +28,15 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+public class Hur2EmailProcess {
+    private static final Logger logger = LogManager.getLogger(Hur2EmailProcess.class);
+    private static final String TYPE_NAME = "HUR2";
 
-public class RapEmailProcess {
-    private static final Logger logger = LogManager.getLogger(RapEmailProcess.class);
-    private static final String TYPE_NAME = "RAP";
-
-    public static void RapEmailProcess() throws Exception {
+    public static void Hur2EmailProcess() throws Exception {
         try {
             // Lay account
             List<EmailAccount> accountList = GetEmailAccount.getAccount();
-            // lay config
+            // lay danh sach config
             List<EmailConfig> lstEmailConfig = GetEmailConfig.getEmailConfigNew(TYPE_NAME);
             for (EmailAccount account : accountList) {
                 Message[] messages = GetMessage.getMessageFromInboxFolder(account.getUserName(), account.getPassword(), account.getHost(), account.getPort());
@@ -83,19 +81,21 @@ public class RapEmailProcess {
                                 fileNameLst += ";";
                             }
                         }
+
                         EmailConfig emailConfig = FilterEmail.checkSenderSubject(senderMail, subjectMail, lstEmailConfig);
-                        String fileEmlName = account.getAccountId() + "-" + messageId + ".eml";
-                        File file = new File(fileEmlName);
-                        FileOutputStream output = new FileOutputStream(file);
-                        message.writeTo(output);
-                        output.close();
+                        String fileEmlName = account.getAccountId() + "-" + messageId +".eml";
 
                         if (emailConfig.getEmailConfigId() != null) {
                             // insert pending
+                            File file = new File(fileEmlName);
+                            FileOutputStream output = new FileOutputStream(file);
+                            message.writeTo(output);
+                            output.close();
                             boolean insertPending = InsertEmail.insertPending(senderMail, subjectMail, receiverMail, fileNameLst, emailConfig.getEmailConfigId(), TYPE_NAME, messageId, fileEmlName);
                             if (insertPending) {
                                 boolean checkAttachment = FilterEmail.checkAttachment(fileNames, emailConfig);
                                 if (checkAttachment) {
+
                                     for (BodyPart bodyPart : bodyParts) {
                                         String attachmentContent = "";
                                         BASE64DecoderStream base64DecoderStream = (BASE64DecoderStream) bodyPart.getInputStream();
@@ -106,7 +106,7 @@ public class RapEmailProcess {
                                             stringBuilder.append(new String(buffer, 0, bufferSize));
                                         }
                                         attachmentContent = stringBuilder.toString();
-                                        boolean resultImport = ImportEmailRapFile.importData(attachmentContent, emailConfig.getEmailConfigId());
+                                        boolean resultImport = ImportEmailHur2.importData(attachmentContent,  emailConfig.getEmailConfigId());
                                         if (resultImport) {
                                             InsertEmail.updateStatusNew(messageId, "1");
                                         }
@@ -117,20 +117,22 @@ public class RapEmailProcess {
                                 }
                             }
                         } else {
-                            logger.info("email: Không phải email tap" + "\n" + senderMail + subjectMail);
+                            logger.info("email: Không phải email " + TYPE_NAME +"\n" + senderMail + subjectMail);
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            logger.error("Error in tap process : " + e);
+            logger.error("Error in process : " + e);
         }
     }
+
+
     static class MyTask extends TimerTask {
         public void run() {
             try {
                 System.out.println("start");
-                RapEmailProcess();
+                Hur2EmailProcess();
                 System.out.println("done");
             } catch (Exception e) {
                 logger.error(e.getMessage() + e);
@@ -161,6 +163,6 @@ public class RapEmailProcess {
         int s = Integer.parseInt(time[2]);
         Timer timer = new Timer();
         // Chay theo thoi gian cau hinh bao nhieu phut chay lai
-        timer.schedule(new RapEmailProcess.MyTask(), 0, h * 36000000 + m * 60000 + s * 1000);
+        timer.schedule(new Hur2EmailProcess.MyTask(), 0, h * 36000000 + m * 60000 + s * 1000);
     }
 }

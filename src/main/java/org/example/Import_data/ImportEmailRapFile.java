@@ -14,11 +14,13 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ImportEmailRapFile {
-    private static final Logger logger = LogManager.getLogger(ImportEmailDfd.class);
+    private static final Logger logger = LogManager.getLogger(ImportEmailRapFile.class);
 
-    public static boolean importData(String data, String ipDb, String user, String password, String tableImport, Long emailConfigId) throws Exception {
+    public static boolean importData(String data, Long emailConfigId) throws Exception {
         Connection connection1 = null;
         Connection connection2 = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
         boolean result = false;
         BufferedReader reader = new BufferedReader(new StringReader(data));
         boolean isRapIn = false;
@@ -28,6 +30,16 @@ public class ImportEmailRapFile {
         StringBuilder sbRapOut = new StringBuilder();
         try {
             connection1 = GetConnection.connect();
+            String tableImport = "";
+            connection1 = GetConnection.connect();
+            String sql = "select * from email.email_database_connection where type_name = 'RAP'";
+            stmt = connection1.prepareStatement(sql);
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                tableImport = rs.getString("table_import");
+            } else {
+                return false;
+            }
             connection2 = GetConnectionToImport.connectNew("RAP");
             connection2.setAutoCommit(false);
             while ((line = reader.readLine()) != null) {
@@ -44,7 +56,9 @@ public class ImportEmailRapFile {
                     sbRapOut.append(line.trim());
                 }
             }
-            if (!sbRapIn.toString().contains("No RAP IN Files created")) {
+            BufferedReader readerIn = new BufferedReader(new StringReader(sbRapIn.toString()));
+            String lineIn;
+            while ((lineIn = readerIn.readLine()) != null && !lineIn.contains("No RAP IN Files created")) {
                 result = false;
                 String[] fields = sbRapIn.toString().split("\\s+");
                 List<String> list = new ArrayList<>();
@@ -58,11 +72,15 @@ public class ImportEmailRapFile {
                 list.add(6, fields[6]);
                 list.add(7, errorDescription);
                 list.add(8, "I");
+                list.add(9,fields[1].substring(2,7));
+                list.add(10,fields[1].substring(7,12));
                 result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
             }
-            if (!sbRapOut.toString().contains("No RAP OUT Files created")) {
+            BufferedReader readerOut = new BufferedReader(new StringReader(sbRapOut.toString()));
+            String lineOut;
+            while ((lineOut = readerOut.readLine()) != null && !lineOut.contains("No RAP OUT Files created")) {
                 result = false;
-                String[] fields = sbRapIn.toString().split("\\s+");
+                String[] fields = sbRapOut.toString().split("\\s+");
                 List<String> list = new ArrayList<>();
                 String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
                 list.add(0, fields[0]);
@@ -74,9 +92,13 @@ public class ImportEmailRapFile {
                 list.add(6, fields[6]);
                 list.add(7, errorDescription);
                 list.add(8, "O");
+                list.add(9,fields[1].substring(7,12));
+                list.add(10,fields[1].substring(2,7));
                 result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
             }
             reader.close();
+            readerIn.close();
+            readerOut.close();
             if (result) {
                 connection2.commit();
             }
@@ -92,7 +114,6 @@ public class ImportEmailRapFile {
     public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
         boolean result = false;
         int resultInsert = 0;
-
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
@@ -100,57 +121,80 @@ public class ImportEmailRapFile {
             ps = connection1.prepareStatement(getDataImportConfig);
             ps.setLong(1, emailConfigId);
             rs = ps.executeQuery();
-            List<Map<String, Object>> lstAll = new ArrayList<>();
+            List<Map<String, String>> lstAll = new ArrayList<>();
+            List<Map<String, String>> lstCheckExist = new ArrayList<>();
             while (rs.next()) {
+                String require = rs.getString("require");
+                String seq = rs.getString("seq_in_file");
+                int seqInt = Integer.parseInt(seq) - 1;
                 String type = rs.getString("type");
+                String columnImport = rs.getString("column_import");
+                String value = fields.get(seqInt);
+                if (require.equals("1")) {
+                    if (value == null || value.equals("")) {
+                        return false;
+                    } else {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", value);
+                        lstCheckExist.add(map);
+                    }
+                }
                 if (type.equals("text")) {
-                    String seq = rs.getString("seq_in_file");
-                    int seqInt = Integer.parseInt(seq);
-                    if (!fields.get(seqInt).isBlank()) {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("column_import", rs.getString("column_import"));
-                        map.put("value", fields.get(seqInt));
-                        lstAll.add(map);
-                    }
+                    Map<String, String> map = new HashMap<>();
+                    map.put("column_import", rs.getString("column_import"));
+                    map.put("value", value);
+                    lstAll.add(map);
                 } else if (type.equals("datetime")) {
-                    String seqInFile = rs.getString("seq_in_file");
-                    int seqInt = Integer.parseInt(seqInFile);
-                    if (!fields.get(seqInt).isBlank()) {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("column_import", rs.getString("column_import"));
-                        map.put("value", formatDatetime(fields.get(seqInt)));
-                        lstAll.add(map);
-                    }
+                    Map<String, String> map = new HashMap<>();
+                    map.put("column_import", rs.getString("column_import"));
+                    map.put("value", formatDatetime(value));
+                    lstAll.add(map);
                 } else if (type.equals("number")) {
-                    String seqInFile = rs.getString("seq_in_file");
-                    int seqInt = Integer.parseInt(seqInFile);
-                    if (!fields.get(seqInt).isBlank()) {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("column_import", rs.getString("column_import"));
-                        map.put("value", fields.get(seqInt));
-                        lstAll.add(map);
+                    Map<String, String> map = new HashMap<>();
+                    map.put("column_import", rs.getString("column_import"));
+                    map.put("value", value);
+                    lstAll.add(map);
+                }
+            }
+            StringBuilder queryBuilder = new StringBuilder("SELECT 1 FROM ");
+            queryBuilder.append(tableImport + " WHERE ");
+            for (int i = 0; i < lstCheckExist.size(); i++) {
+                Map<String, String> data = lstCheckExist.get(i);
+                String columnName = data.get("column_import");
+                String value = data.get("value");
+                queryBuilder.append(columnName + " = '" + value + "'");
+
+                if (i < lstCheckExist.size() - 1) {
+                    queryBuilder.append(" AND ");
+                }
+            }
+            ps = connection2.prepareStatement(queryBuilder.toString());
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                System.out.println("du lieu da ton tai");
+                return false;
+            } else {
+                String insertQuery = "INSERT INTO " + tableImport + " (";
+                for (int i = 0; i < lstAll.size(); i++) {
+                    String column = (String) lstAll.get(i).get("column_import");
+                    insertQuery += column;
+                    if (i < lstAll.size() - 1) {
+                        insertQuery += ",";
                     }
                 }
-            }
-            String insertQuery = "INSERT INTO " + tableImport + " (";
-            for (int i = 0; i < lstAll.size(); i++) {
-                String column = (String) lstAll.get(i).get("column_import");
-                insertQuery += column;
-                if (i < lstAll.size() - 1) {
-                    insertQuery += ",";
+                insertQuery += ") VALUES (";
+                for (int i = 0; i < lstAll.size(); i++) {
+                    String value = (String) lstAll.get(i).get("value");
+                    insertQuery += "'" + value + "'";
+                    if (i < lstAll.size() - 1) {
+                        insertQuery += ",";
+                    }
                 }
+                insertQuery += ")";
+                ps = connection2.prepareStatement(insertQuery);
+                resultInsert = ps.executeUpdate();
             }
-            insertQuery += ") VALUES (";
-            for (int i = 0; i < lstAll.size(); i++) {
-                String value = (String) lstAll.get(i).get("value");
-                insertQuery += "'" + value + "'";
-                if (i < lstAll.size() - 1) {
-                    insertQuery += ",";
-                }
-            }
-            insertQuery += ")";
-            ps = connection2.prepareStatement(insertQuery);
-            resultInsert = ps.executeUpdate();
             if (resultInsert == 1) {
                 result = true;
             }

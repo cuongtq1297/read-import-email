@@ -109,12 +109,8 @@ public class GetEmailConfig {
                 emailConfig.setSubjectMail(lstSubject);
                 emailConfig.setSubjectSelector(rs.getString("subject_selector"));
                 emailConfig.setAttachFileType(rs.getString("attach_file_type"));
-                emailConfig.setUsername(rs.getString("username"));
-                emailConfig.setPassword(rs.getString("password"));
-                emailConfig.setTableImport(rs.getString("table_import"));
                 emailConfig.setPatternAttachment(lstPatternAttachment);
                 emailConfig.setPatternSelector(rs.getString("pattern_selector"));
-                emailConfig.setIpDb(rs.getString("tns"));
 
                 list.add(emailConfig);
             }

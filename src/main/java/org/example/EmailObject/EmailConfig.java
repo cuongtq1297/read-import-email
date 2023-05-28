@@ -13,28 +13,6 @@ public class EmailConfig {
     private List<String> patternAttachment;
     private String patternSelector;
     private String attachFileType;
-    private String ipDb;
-    private String username;
-    private String password;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    private String tns;
-    private String tableImport;
 
     public Long getEmailConfigId() {
         return emailConfigId;
@@ -98,30 +76,6 @@ public class EmailConfig {
 
     public void setAttachFileType(String attachFileType) {
         this.attachFileType = attachFileType;
-    }
-
-    public String getIpDb() {
-        return ipDb;
-    }
-
-    public void setIpDb(String ipDb) {
-        this.ipDb = ipDb;
-    }
-
-    public String getTns() {
-        return tns;
-    }
-
-    public void setTns(String tns) {
-        this.tns = tns;
-    }
-
-    public String getTableImport() {
-        return tableImport;
-    }
-
-    public void setTableImport(String tableImport) {
-        this.tableImport = tableImport;
     }
 
     public List<String> getSubjectMail() {
