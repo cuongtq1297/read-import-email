@@ -59,6 +59,9 @@ public class ImportEmailRapFile {
             BufferedReader readerIn = new BufferedReader(new StringReader(sbRapIn.toString()));
             String lineIn;
             while ((lineIn = readerIn.readLine()) != null && !lineIn.contains("No RAP IN Files created")) {
+                String hplmn = "";
+                String vplmn = "";
+                String direction = "";
                 result = false;
                 String[] fields = sbRapIn.toString().split("\\s+");
                 List<String> list = new ArrayList<>();
@@ -71,15 +74,18 @@ public class ImportEmailRapFile {
                 list.add(5, fields[5]);
                 list.add(6, fields[6]);
                 list.add(7, errorDescription);
-                list.add(8, "I");
-                list.add(9,fields[1].substring(2,7));
-                list.add(10,fields[1].substring(7,12));
-                result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
+                direction = "I";
+                hplmn = fields[1].substring(2, 7);
+                vplmn = fields[1].substring(7, 12);
+                result = InsertData(connection1, connection2, list, tableImport, emailConfigId, direction, hplmn, vplmn);
             }
             BufferedReader readerOut = new BufferedReader(new StringReader(sbRapOut.toString()));
             String lineOut;
             while ((lineOut = readerOut.readLine()) != null && !lineOut.contains("No RAP OUT Files created")) {
                 result = false;
+                String hplmn = "";
+                String vplmn = "";
+                String direction = "";
                 String[] fields = sbRapOut.toString().split("\\s+");
                 List<String> list = new ArrayList<>();
                 String errorDescription = String.join(" ", Arrays.copyOfRange(fields, 7, fields.length));
@@ -91,10 +97,10 @@ public class ImportEmailRapFile {
                 list.add(5, fields[5]);
                 list.add(6, fields[6]);
                 list.add(7, errorDescription);
-                list.add(8, "O");
-                list.add(9,fields[1].substring(7,12));
-                list.add(10,fields[1].substring(2,7));
-                result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
+                direction = "O";
+                hplmn = fields[1].substring(7, 12);
+                vplmn = fields[1].substring(2, 7);
+                result = InsertData(connection1, connection2, list, tableImport, emailConfigId, direction, hplmn, vplmn);
             }
             reader.close();
             readerIn.close();
@@ -111,7 +117,7 @@ public class ImportEmailRapFile {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId, String direction, String hplmn, String vplmn) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -175,7 +181,7 @@ public class ImportEmailRapFile {
                 System.out.println("du lieu da ton tai");
                 return false;
             } else {
-                String insertQuery = "INSERT INTO " + tableImport + " (";
+                String insertQuery = "INSERT INTO " + tableImport + " (hplmn, vplmn, direction,";
                 for (int i = 0; i < lstAll.size(); i++) {
                     String column = (String) lstAll.get(i).get("column_import");
                     insertQuery += column;
@@ -183,7 +189,7 @@ public class ImportEmailRapFile {
                         insertQuery += ",";
                     }
                 }
-                insertQuery += ") VALUES (";
+                insertQuery += ") VALUES (" + "'" + hplmn + "','" + vplmn + "','" + direction + "',";
                 for (int i = 0; i < lstAll.size(); i++) {
                     String value = (String) lstAll.get(i).get("value");
                     insertQuery += "'" + value + "'";

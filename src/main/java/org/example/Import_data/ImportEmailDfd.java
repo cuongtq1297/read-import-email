@@ -65,23 +65,22 @@ public class ImportEmailDfd {
             while ((line1 = reader1.readLine()) != null) {
                 if (!line1.matches("[\\s-]+")) {
                     List<String> list = new ArrayList<>();
-                    list.add(0, vpmn);
-                    list.add(1, (String) line1.subSequence(0, 5));
-                    list.add(2, (String) line1.subSequence(6, 11));
-                    list.add(3, (String) line1.subSequence(12, 27));
-                    list.add(4, (String) line1.subSequence(28, 43));
-                    list.add(5, (String) line1.subSequence(44, 51));
-                    list.add(6, (String) line1.subSequence(52, 55));
-                    list.add(7, (String) line1.subSequence(56, 66));
-                    list.add(8, (String) line1.subSequence(67, 70));
-                    list.add(9, (String) line1.subSequence(71, 86));
-                    list.add(10, (String) line1.subSequence(87, 102));
-                    list.add(11, (String) line1.subSequence(103, 104));
-                    list.add(12, (String) line1.subSequence(105, 120));
-                    list.add(13, (String) line1.subSequence(121, 124));
-                    list.add(14, (String) line1.subSequence(125, 128));
-                    list.add(15, (String) line1.subSequence(129, 132));
-                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
+                    list.add(0, (String) line1.subSequence(0, 5));
+                    list.add(1, (String) line1.subSequence(6, 11));
+                    list.add(2, (String) line1.subSequence(12, 27));
+                    list.add(3, (String) line1.subSequence(28, 43));
+                    list.add(4, (String) line1.subSequence(44, 51));
+                    list.add(5, (String) line1.subSequence(52, 55));
+                    list.add(6, (String) line1.subSequence(56, 66));
+                    list.add(7, (String) line1.subSequence(67, 70));
+                    list.add(8, (String) line1.subSequence(71, 86));
+                    list.add(9, (String) line1.subSequence(87, 102));
+                    list.add(10, (String) line1.subSequence(103, 104));
+                    list.add(11, (String) line1.subSequence(105, 120));
+                    list.add(12, (String) line1.subSequence(121, 124));
+                    list.add(13, (String) line1.subSequence(125, 128));
+                    list.add(14, (String) line1.subSequence(129, 132));
+                    result = InsertData(connection1, connection2, list, tableImport, emailConfigId, vpmn);
                     if (!result) {
                         break;
                     }
@@ -100,7 +99,7 @@ public class ImportEmailDfd {
         return result;
     }
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId, String vpmn) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -117,7 +116,7 @@ public class ImportEmailDfd {
             while (rs.next()) {
                 String require = rs.getString("require");
                 String seq = rs.getString("seq_in_file");
-                int seqInt = Integer.parseInt(seq);
+                int seqInt = Integer.parseInt(seq) - 1;
                 String type = rs.getString("type");
                 String columnImport = rs.getString("column_import");
                 String value = fields.get(seqInt);
@@ -178,7 +177,7 @@ public class ImportEmailDfd {
                 System.out.println("du lieu da ton tai");
                 return false;
             } else {
-                String insertQuery = "INSERT INTO " + tableImport + " (";
+                String insertQuery = "INSERT INTO " + tableImport + " (vpmn,";
                 for (int i = 0; i < lstAll.size(); i++) {
                     String column = (String) lstAll.get(i).get("column_import");
                     insertQuery += column;
@@ -186,7 +185,7 @@ public class ImportEmailDfd {
                         insertQuery += ",";
                     }
                 }
-                insertQuery += ") VALUES (";
+                insertQuery += ") VALUES (" + "'" + vpmn + "',";
                 for (int i = 0; i < lstAll.size(); i++) {
                     String value = (String) lstAll.get(i).get("value");
                     insertQuery += "'" + value + "'";

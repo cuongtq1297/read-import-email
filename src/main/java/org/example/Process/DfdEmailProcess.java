@@ -126,7 +126,9 @@ public class DfdEmailProcess {
     static class MyTask extends TimerTask {
         public void run() {
             try {
+                System.out.println("start");
                 DfdEmailProcess();
+                System.out.println("end");
             } catch (Exception e) {
                 logger.error(e.getMessage() + e);
             }

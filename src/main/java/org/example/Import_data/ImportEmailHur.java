@@ -37,16 +37,24 @@ public class ImportEmailHur {
             }
             connection2 = GetConnectionToImport.connectNew("HUR");
             connection2.setAutoCommit(false);
+            String hplmn = "";
+            String vplmn = "";
             while ((line = reader.readLine()) != null) {
+                if (line.startsWith("H")) {
+                    List<String> fields = Arrays.asList(line.split(","));
+                    hplmn = fields.get(1);
+                    vplmn = fields.get(2);
+                }
+
                 if (line.startsWith("P")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    result = InsertData(connection1, connection2, fields, tableImport, emailConfigId);
+                    result = InsertData(connection1, connection2, fields, tableImport, emailConfigId, hplmn, vplmn);
                     if (!result) {
                         break;
                     }
                 } else if (line.startsWith("C")) {
                     List<String> fields = Arrays.asList(line.split(","));
-                    result = InsertData(connection1, connection2, fields, tableImport, emailConfigId);
+                    result = InsertData(connection1, connection2, fields, tableImport, emailConfigId, hplmn, vplmn);
                     if (!result) {
                         break;
                     }
@@ -66,7 +74,7 @@ public class ImportEmailHur {
     }
 
 
-    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId) throws Exception {
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId, String hplmn, String vplmn) throws Exception {
         boolean result = false;
         int resultInsert = 0;
         PreparedStatement ps = null;
@@ -164,7 +172,7 @@ public class ImportEmailHur {
                 System.out.println("du lieu da ton tai");
                 return false;
             } else {
-                String insertQuery = "INSERT INTO " + tableImport + " (";
+                String insertQuery = "INSERT INTO " + tableImport + " (hplmn, vplmn,";
                 for (int i = 0; i < lstAll.size(); i++) {
                     String column = (String) lstAll.get(i).get("column_import");
                     insertQuery += column;
@@ -172,7 +180,7 @@ public class ImportEmailHur {
                         insertQuery += ",";
                     }
                 }
-                insertQuery += ") VALUES (";
+                insertQuery += ") VALUES (" + "'" + hplmn + "','" + vplmn + "',";
                 for (int i = 0; i < lstAll.size(); i++) {
                     String value = (String) lstAll.get(i).get("value");
                     insertQuery += "'" + value + "'";

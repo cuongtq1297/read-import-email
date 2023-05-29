@@ -111,14 +111,13 @@ public class ImportEmailTap {
                 readerTapInPending.close();
 
                 list.add(0, tapName);
-                list.add(1, pendingTime);
-                list.add(2, charge);
-                list.add(3, errorCharge);
-                list.add(4, firstCall);
-                list.add(5, fileCount);
-                list.add(6, error);
-                list.add(7, action);
-                result = InsertData(connection1, connection2, list, tableImport, emailConfigId);
+                list.add(1, charge);
+                list.add(2, errorCharge);
+                list.add(3, firstCall);
+                list.add(4, fileCount);
+                list.add(5, error);
+                list.add(6, action);
+                result = InsertData(connection1, connection2, list, tableImport, emailConfigId, pendingTime);
                 if (!result) {
                     break;
                 }
@@ -135,99 +134,99 @@ public class ImportEmailTap {
         return result;
     }
 
-        public static boolean InsertData (Connection connection1, Connection connection2, List < String > fields, String tableImport, Long emailConfigId) throws Exception {
-            boolean result = false;
-            int resultInsert = 0;
-            PreparedStatement ps = null;
-            ResultSet rs = null;
-            try {
-                String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
-                ps = connection1.prepareStatement(getDataImportConfig);
-                ps.setLong(1, emailConfigId);
-                rs = ps.executeQuery();
-                List<Map<String, String>> lstAll = new ArrayList<>();
-                List<Map<String, String>> lstCheckExist = new ArrayList<>();
-                while (rs.next()) {
-                    String require = rs.getString("require");
-                    String seq = rs.getString("seq_in_file");
-                    int seqInt = Integer.parseInt(seq) - 1;
-                    String type = rs.getString("type");
-                    String columnImport = rs.getString("column_import");
-                    String value = fields.get(seqInt);
-                    if (require.equals("1")) {
-                        if (value == null || value.equals("")) {
-                            return false;
-                        } else {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("column_import", columnImport);
-                            map.put("value", value);
-                            lstCheckExist.add(map);
-                        }
-                    }
-                    if (type.equals("text")) {
-                        if (!fields.get(seqInt).isBlank()) {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("column_import", columnImport);
-                            map.put("value", value);
-                            lstAll.add(map);
-                        }
-                    } else if (type.equals("datetime")) {
-                        if (!fields.get(seqInt).isBlank()) {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("column_import", columnImport);
-                            map.put("value", formatDatetime(value));
-                            lstAll.add(map);
-                        }
-                    } else if (type.equals("number")) {
-                        if (!fields.get(seqInt).isBlank()) {
-                            Map<String, String> map = new HashMap<>();
-                            map.put("column_import", columnImport);
-                            map.put("value", value);
-                            lstAll.add(map);
-                        }
+    public static boolean InsertData(Connection connection1, Connection connection2, List<String> fields, String tableImport, Long emailConfigId, String pendingTime) throws Exception {
+        boolean result = false;
+        int resultInsert = 0;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            String getDataImportConfig = "select * from email.email_config_detail where email_config_id = ?";
+            ps = connection1.prepareStatement(getDataImportConfig);
+            ps.setLong(1, emailConfigId);
+            rs = ps.executeQuery();
+            List<Map<String, String>> lstAll = new ArrayList<>();
+            List<Map<String, String>> lstCheckExist = new ArrayList<>();
+            while (rs.next()) {
+                String require = rs.getString("require");
+                String seq = rs.getString("seq_in_file");
+                int seqInt = Integer.parseInt(seq) - 1;
+                String type = rs.getString("type");
+                String columnImport = rs.getString("column_import");
+                String value = fields.get(seqInt);
+                if (require.equals("1")) {
+                    if (value == null || value.equals("")) {
+                        return false;
+                    } else {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", value);
+                        lstCheckExist.add(map);
                     }
                 }
-                String insertQuery = "INSERT INTO " + tableImport + " (";
-                for (int i = 0; i < lstAll.size(); i++) {
-                    String column = (String) lstAll.get(i).get("column_import");
-                    insertQuery += column;
-                    if (i < lstAll.size() - 1) {
-                        insertQuery += ",";
+                if (type.equals("text")) {
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", value);
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("datetime")) {
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", formatDatetime(value));
+                        lstAll.add(map);
+                    }
+                } else if (type.equals("number")) {
+                    if (!fields.get(seqInt).isBlank()) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("column_import", columnImport);
+                        map.put("value", value);
+                        lstAll.add(map);
                     }
                 }
-                insertQuery += ") VALUES (";
-                for (int i = 0; i < lstAll.size(); i++) {
-                    String value = (String) lstAll.get(i).get("value");
-                    insertQuery += "'" + value + "'";
-                    if (i < lstAll.size() - 1) {
-                        insertQuery += ",";
-                    }
-                }
-                insertQuery += ")";
-                ps = connection2.prepareStatement(insertQuery);
-                resultInsert = ps.executeUpdate();
-                if (resultInsert == 1) {
-                    result = true;
-                }
-            } catch (Exception e) {
-                logger.error(e);
-            } finally {
-                rs.close();
-                ps.close();
             }
-            return result;
-        }
-
-        public static String formatDatetime (String dateTimeString) throws Exception {
-            String formattedDateTime = "";
-            try {
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                Date date = formatter.parse(dateTimeString);
-                SimpleDateFormat newFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                formattedDateTime = newFormatter.format(date);
-            } catch (Exception e) {
-                logger.error(e);
+            String insertQuery = "INSERT INTO " + tableImport + " (pending_time,";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String column = (String) lstAll.get(i).get("column_import");
+                insertQuery += column;
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
+                }
             }
-            return formattedDateTime;
+            insertQuery += ") VALUES (" + "'" + pendingTime + "',";
+            for (int i = 0; i < lstAll.size(); i++) {
+                String value = (String) lstAll.get(i).get("value");
+                insertQuery += "'" + value + "'";
+                if (i < lstAll.size() - 1) {
+                    insertQuery += ",";
+                }
+            }
+            insertQuery += ")";
+            ps = connection2.prepareStatement(insertQuery);
+            resultInsert = ps.executeUpdate();
+            if (resultInsert == 1) {
+                result = true;
+            }
+        } catch (Exception e) {
+            logger.error(e);
+        } finally {
+            rs.close();
+            ps.close();
         }
+        return result;
     }
+
+    public static String formatDatetime(String dateTimeString) throws Exception {
+        String formattedDateTime = "";
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+            Date date = formatter.parse(dateTimeString);
+            SimpleDateFormat newFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            formattedDateTime = newFormatter.format(date);
+        } catch (Exception e) {
+            logger.error(e);
+        }
+        return formattedDateTime;
+    }
+}
